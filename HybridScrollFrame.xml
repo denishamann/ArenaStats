@@ -1,0 +1,133 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+
+    <Frame name="ArenaStatsHybridScrollListItemTemplate" virtual="true">
+        <Size x="0" y="24"/>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture parentKey="Background" setAllPoints="true">
+                    <Color r="0" g="0" b="0" a="0.2"/>
+                </Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <FontString parentKey="Date" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size x="150"/>
+                    <Anchors>
+                        <Anchor point="LEFT" x="4" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="Map" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size x="40"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Date" x="4"/>
+					</Anchors>
+                </FontString>
+                <FontString parentKey="Duration" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size x="98"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Map"/>
+					</Anchors>
+                </FontString>
+
+
+                <Texture parentKey="IconTeamPlayerClass1">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Duration"/>
+					</Anchors>
+                </Texture>
+                <Texture parentKey="IconTeamPlayerClass2">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconTeamPlayerClass1"/>
+					</Anchors>
+                </Texture>
+                <Texture parentKey="IconTeamPlayerClass3">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconTeamPlayerClass2"/>
+					</Anchors>
+                </Texture>
+                <Texture parentKey="IconTeamPlayerClass4">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconTeamPlayerClass3"/>
+					</Anchors>
+                </Texture>
+                <Texture parentKey="IconTeamPlayerClass5">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconTeamPlayerClass4"/>
+					</Anchors>
+                </Texture>
+
+                <FontString parentKey="Rating" inherits="GameFontHighlightSmall" justifyH="CENTER">
+                    <Size x="36"/>
+                    <Anchors>
+                        <Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconTeamPlayerClass5" x="4"/>
+                    </Anchors>
+                </FontString>
+
+                <Texture parentKey="IconEnemyPlayer1">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Rating" x="8"/>
+					</Anchors>
+                </Texture>
+                <Texture parentKey="IconEnemyPlayer2">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer1"/>
+					</Anchors>
+                </Texture>
+                <Texture parentKey="IconEnemyPlayer3">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer2"/>
+					</Anchors>
+                </Texture>
+                <Texture parentKey="IconEnemyPlayer4">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer3"/>
+					</Anchors>
+                </Texture>
+                <Texture parentKey="IconEnemyPlayer5">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer4"/>
+					</Anchors>
+                </Texture>
+                <Texture parentKey="EnemyFaction">
+                    <Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer5" x="25"/>
+					</Anchors>
+                </Texture>
+
+
+            </Layer>
+            <Layer level="HIGHLIGHT">
+                <Texture parentKey="Highlight" setAllPoints="true" alphaMode="ADD">
+                    <Color r="1" g="0.75" b="0" a="0.2"/>
+                </Texture>
+            </Layer>
+        </Layers>
+    </Frame>
+
+    <Frame name="ArenaStatsHybridScrollFrame" inherits="HybridScrollFrameTemplate" virtual="true">
+        <Anchors>
+            <Anchor point="TOPLEFT" x="2" y="-2"/>
+            <Anchor point="BOTTOMRIGHT" x="-25" y="7"/>
+        </Anchors>
+        <Frames>
+            <Slider parentKey="scrollBar" inherits="HybridScrollBarTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="1" y="-16"/>
+                    <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="1" y="12"/>
+                </Anchors>
+            </Slider>
+        </Frames>
+    </Frame>
+</Ui>
