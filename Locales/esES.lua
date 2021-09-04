@@ -1,5 +1,5 @@
-local L = LibStub("AceLocale-3.0"):NewLocale("ArenaStats", "esES")
-if not L then return end 
+local L = LibStub("AceLocale-3.0"):NewLocale("ArenaStatsTBC", "esES")
+if not L then return end
 
 --[[Translation missing --]]
 L["%F %T"] = "%F %T"
@@ -10,7 +10,8 @@ L["%im %is"] = "%im %is"
 --[[Translation missing --]]
 L["%is"] = "%is"
 --[[Translation missing --]]
-L["Battlegrounds records can impact memory usage (0 means unlimited)"] = "Battlegrounds records can impact memory usage (0 means unlimited)"
+L["Battlegrounds records can impact memory usage (0 means unlimited)"] =
+    "Battlegrounds records can impact memory usage (0 means unlimited)"
 --[[Translation missing --]]
 L["BEA"] = "BEA"
 --[[Translation missing --]]
@@ -65,6 +66,12 @@ L["Ruins of Lordaeron"] = "Ruins of Lordaeron"
 L["Show minimap button"] = "Show minimap button"
 --[[Translation missing --]]
 L["Team"] = "Team"
+--[[Translation missing --]]
+L["to open the main window"] = "to open the main window"
+--[[Translation missing --]]
+L["to open options"] = "to open options"
+--[[Translation missing --]]
+L["to move this button"] = "to move this button"
 --[[Translation missing --]]
 L["Toggle"] = "Toggle"
 

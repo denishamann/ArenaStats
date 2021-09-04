@@ -1,4 +1,4 @@
-local addonName = "ArenaStats"
+local addonName = "ArenaStatsTBC"
 local addonTitle = select(2, _G.GetAddOnInfo(addonName))
 local ArenaStats = _G.LibStub("AceAddon-3.0"):GetAddon(addonName)
 local L = _G.LibStub("AceLocale-3.0"):GetLocale(addonName, true)
@@ -13,12 +13,11 @@ function ArenaStats:CreateGUI()
     f:EnableResize(false)
 
     f:SetTitle(addonTitle)
-    local frameName = addonName .."_MainFrame"
+    local frameName = addonName .. "_MainFrame"
     _G[frameName] = f
     table.insert(_G.UISpecialFrames, frameName)
     f:SetStatusText("Status Bar")
     f:SetLayout("Flow")
-
 
     local exportButton = AceGUI:Create("Button")
     exportButton:SetWidth(100)
@@ -44,7 +43,6 @@ function ArenaStats:CreateGUI()
     ArenaStats:CreateScoreButton(tableHeader, 100, "Enemy Team")
     ArenaStats:CreateScoreButton(tableHeader, 80, "Enemy Faction")
 
-
     -- TABLE
     local scrollContainer = AceGUI:Create("SimpleGroup")
     scrollContainer:SetFullWidth(true)
@@ -52,10 +50,11 @@ function ArenaStats:CreateGUI()
     scrollContainer:SetLayout("Fill")
     f:AddChild(scrollContainer)
 
-    scrollFrame = _G.CreateFrame("ScrollFrame", nil, scrollContainer.frame, "ArenaStatsHybridScrollFrame")
-    _G.HybridScrollFrame_CreateButtons(scrollFrame, "ArenaStatsHybridScrollListItemTemplate")
+    scrollFrame = _G.CreateFrame("ScrollFrame", nil, scrollContainer.frame,
+                                 "ArenaStatsHybridScrollFrame")
+    _G.HybridScrollFrame_CreateButtons(scrollFrame,
+                                       "ArenaStatsHybridScrollListItemTemplate")
     scrollFrame.update = function() ArenaStats:UpdateTableView() end
-
 
     -- Export frame
 
@@ -77,9 +76,7 @@ function ArenaStats:CreateGUI()
     exportFrame.eb = exportEditBox
 end
 
-function ArenaStats:UpdateTableView()
-    self:RefreshLayout()
-end
+function ArenaStats:UpdateTableView() self:RefreshLayout() end
 
 function ArenaStats:CreateScoreButton(tableHeader, width, localeStr)
     btn = AceGUI:Create("Label")
@@ -109,21 +106,32 @@ function ArenaStats:RefreshLayout()
             button.Map:SetText(self:ZoneNameShort(row["zoneId"]))
             button.Duration:SetText(self:HumanDuration(row["duration"]))
 
-            button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(row["teamPlayerClass1"]))
-            button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(row["teamPlayerClass2"]))
-            button.IconTeamPlayerClass3:SetTexture(self:ClassIconId(row["teamPlayerClass3"]))
-            button.IconTeamPlayerClass4:SetTexture(self:ClassIconId(row["teamPlayerClass4"]))
-            button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(row["teamPlayerClass5"]))
+            button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(
+                                                       row["teamPlayerClass1"]))
+            button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(
+                                                       row["teamPlayerClass2"]))
+            button.IconTeamPlayerClass3:SetTexture(self:ClassIconId(
+                                                       row["teamPlayerClass3"]))
+            button.IconTeamPlayerClass4:SetTexture(self:ClassIconId(
+                                                       row["teamPlayerClass4"]))
+            button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(
+                                                       row["teamPlayerClass5"]))
             button.Rating:SetText(row["diffRating"])
             button.Rating:SetTextColor(self:ColorForRating(row["diffRating"]))
-            button.IconEnemyPlayer1:SetTexture(self:ClassIconId(row["enemyPlayerClass1"]))
-            button.IconEnemyPlayer2:SetTexture(self:ClassIconId(row["enemyPlayerClass2"]))
-            button.IconEnemyPlayer3:SetTexture(self:ClassIconId(row["enemyPlayerClass3"]))
-            button.IconEnemyPlayer4:SetTexture(self:ClassIconId(row["enemyPlayerClass4"]))
-            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(row["enemyPlayerClass5"]))
-            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(row["enemyPlayerClass5"]))
-            button.EnemyFaction:SetTexture(self:FactionIconId(row["enemyFaction"]))
-
+            button.IconEnemyPlayer1:SetTexture(self:ClassIconId(
+                                                   row["enemyPlayerClass1"]))
+            button.IconEnemyPlayer2:SetTexture(self:ClassIconId(
+                                                   row["enemyPlayerClass2"]))
+            button.IconEnemyPlayer3:SetTexture(self:ClassIconId(
+                                                   row["enemyPlayerClass3"]))
+            button.IconEnemyPlayer4:SetTexture(self:ClassIconId(
+                                                   row["enemyPlayerClass4"]))
+            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(
+                                                   row["enemyPlayerClass5"]))
+            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(
+                                                   row["enemyPlayerClass5"]))
+            button.EnemyFaction:SetTexture(self:FactionIconId(
+                                               row["enemyFaction"]))
 
             button:SetWidth(scrollFrame.scrollChild:GetWidth())
             button:Show()
@@ -140,9 +148,7 @@ function ArenaStats:RefreshLayout()
 end
 
 function ArenaStats:Show()
-    if not f then
-        self:CreateGUI()
-    end
+    if not f then self:CreateGUI() end
 
     rows = ArenaStats:BuildTable()
 
@@ -150,9 +156,7 @@ function ArenaStats:Show()
     self:RefreshLayout()
 end
 
-function ArenaStats:Hide()
-    f:Hide()
-end
+function ArenaStats:Hide() f:Hide() end
 
 function ArenaStats:Toggle()
     if f and f:IsShown() then
@@ -163,9 +167,7 @@ function ArenaStats:Toggle()
 end
 
 function ArenaStats:HumanDuration(seconds)
-    if seconds < 60 then
-        return string.format(L["%is"], seconds)
-    end
+    if seconds < 60 then return string.format(L["%is"], seconds) end
     local minutes = math.floor(seconds / 60)
     if minutes < 60 then
         return string.format(L["%im %is"], minutes, (seconds - minutes * 60))
@@ -176,9 +178,7 @@ end
 
 function ArenaStats:ClassIconId(className)
 
-    if not className then
-        return 0
-    end
+    if not className then return 0 end
 
     if className == "MAGE" then
         return 626001
@@ -203,9 +203,7 @@ end
 
 function ArenaStats:FactionIconId(factionId)
 
-    if not factionId then
-        return 0
-    end
+    if not factionId then return 0 end
 
     if factionId == 0 then
         return 132485
@@ -216,9 +214,7 @@ end
 
 function ArenaStats:ColorForRating(rating)
 
-    if not rating or rating == 0 then
-        return 255, 255, 255, 1
-    end
+    if not rating or rating == 0 then return 255, 255, 255, 1 end
 
     if rating < 0 then
         return 255, 0, 0, 1
@@ -227,9 +223,5 @@ function ArenaStats:ColorForRating(rating)
     end
 end
 
-function ArenaStats:ExportFrame()
-    return exportFrame
-end
-function ArenaStats:ExportEditBox()
-    return exportEditBox
-end
+function ArenaStats:ExportFrame() return exportFrame end
+function ArenaStats:ExportEditBox() return exportEditBox end

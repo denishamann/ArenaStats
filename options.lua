@@ -1,4 +1,4 @@
-local addonName = "ArenaStats"
+local addonName = "ArenaStatsTBC"
 local _, addonTitle, addonNotes = GetAddOnInfo(addonName)
 local ArenaStats = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
@@ -25,11 +25,7 @@ function ArenaStats:RegisterOptionsTable()
                 type = "group",
                 name = L["Options"],
                 args = {
-                    intro = {
-                        order = 0,
-                        type = "description",
-                        name = addonNotes,
-                    },
+                    intro = {order = 0, type = "description", name = addonNotes},
                     group1 = {
                         order = 10,
                         type = "group",
@@ -44,8 +40,12 @@ function ArenaStats:RegisterOptionsTable()
                                 min = 0,
                                 max = 1000,
                                 step = 10,
-                                get = function() return self.db.profile.maxHistory end,
-                                set = function(_, val) self.db.profile.maxHistory = val end,
+                                get = function()
+                                    return self.db.profile.maxHistory
+                                end,
+                                set = function(_, val)
+                                    self.db.profile.maxHistory = val
+                                end
                             },
                             purge = {
                                 order = 19,
@@ -53,9 +53,11 @@ function ArenaStats:RegisterOptionsTable()
                                 name = L["Purge database"],
                                 desc = L["Delete all collected data"],
                                 confirm = true,
-                                func = function() self:ResetDatabase() end
-                            },
-                        },
+                                func = function()
+                                    self:ResetDatabase()
+                                end
+                            }
+                        }
                     },
                     group2 = {
                         order = 20,
@@ -68,18 +70,20 @@ function ArenaStats:RegisterOptionsTable()
                                 type = "toggle",
                                 name = L["Show minimap button"],
                                 get = function()
-                                    return not self.db.profile.minimapButton.hide
+                                    return
+                                        not self.db.profile.minimapButton.hide
                                 end,
-                                set = 'ToggleMinimapButton',
-                            },
-                        },
-                    },
+                                set = 'ToggleMinimapButton'
+                            }
+                        }
+                    }
                 }
             },
-            Profiles = AceDBOptions:GetOptionsTable(ArenaStats.db),
+            Profiles = AceDBOptions:GetOptionsTable(ArenaStats.db)
         }
     }, {"arenastats"})
     AceConfigDialog:AddToBlizOptions(addonName, nil, nil, "General")
 
-    AceConfigDialog:AddToBlizOptions(addonName, "Profiles", addonName, "Profiles")
+    AceConfigDialog:AddToBlizOptions(addonName, "Profiles", addonName,
+                                     "Profiles")
 end
