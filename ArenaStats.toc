@@ -2,7 +2,7 @@
 ## Title: ArenaStats - TBC
 ## Notes: Arena history and statistics with csv export
 ## Author: Kallias-Sulfuron
-## Version: 1
+## Version: 0.0.1
 ## SavedVariables: ArenaStats
 
 embeds.xml
