@@ -248,7 +248,10 @@ end
 function ArenaStats:BuildTable()
     local tbl = {}
 
-    for _, row in ipairs(self.db.char.history) do
+    local tableLength = #self.db.char.history
+
+    for i = 1, tableLength do
+        local row = self.db.char.history[tableLength + 1 - i]
         table.insert(tbl, {
 
             -- Common stats
