@@ -2,7 +2,7 @@
 
 **Classic BCC addon for arena history and statistics**
 
-_This addon is currently a raw alpha, expect issues you may want to [report](https://github.com/denishamann/ArenaStatsTBC/issues)._
+_[Report issues here](https://github.com/denishamann/ArenaStatsTBC/issues)._
 
 ArenaStats - TBC tries to record every arena joined and compiles statistics.
 Heavily inspired by [Battlegrounds Historian TBC](https://www.curseforge.com/wow/addons/bghistorian-tbc), which doesn't seem to release arena support for now.
@@ -11,14 +11,11 @@ Responds to console with **/arenastats** and a minimap button.
 
 ## Features
 
-Mostly working parts :
-
-- Record played arena statistics
-- Display summarised arena history in a table
-- Exportable data into csv format (which can easily be used for advanced statistics)
+- **Record** played arena statistics
+- Display summarised **arena history** in a table
+- Exportable data into **csv** format (which can easily be used for advanced statistics)
 
 ## List of fields available at CSV export for each Arena match
-
 
 - isRanked
 - startTime
@@ -69,9 +66,26 @@ Mostly working parts :
 
 ## Todo
 
+### Common
+
+- Detect spec
+
+### In game gui:
+- Add tooltip on hover on class to display name/race
+- Filter on bracker type
+
+### Csv:
+- Add csv column for bracket type
+- Provide a csv sheet with prepared graphs in which we can paste our data
+
+
 ## Known issues
 
 - If you quit the arena and there is still someone of your team alive, the arena won't be recorded (stay until the scoreboard shows or be quit only if you are the last one alive).
+- Sometimes player names are not recorded
+- Sometimes data is not correctly reset between games and there are ghost players added to the arena or timers are wrong
+- If a player gets disconnected at the end of the arena it records twice the arena match (reported by @Lilianos)
+
 
 ## Contribution
 
