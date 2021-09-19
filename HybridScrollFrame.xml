@@ -11,25 +11,27 @@
                 </Texture>
             </Layer>
             <Layer level="ARTWORK">
+
                 <FontString parentKey="Date" inherits="GameFontHighlightSmall" justifyH="LEFT">
                     <Size x="150"/>
                     <Anchors>
                         <Anchor point="LEFT" x="4" y="0"/>
                     </Anchors>
                 </FontString>
+
                 <FontString parentKey="Map" inherits="GameFontHighlightSmall" justifyH="LEFT">
                     <Size x="40"/>
 					<Anchors>
-						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Date" x="4"/>
-					</Anchors>
-                </FontString>
-                <FontString parentKey="Duration" inherits="GameFontHighlightSmall" justifyH="LEFT">
-                    <Size x="98"/>
-					<Anchors>
-						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Map"/>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Date" x="0"/>
 					</Anchors>
                 </FontString>
 
+                <FontString parentKey="Duration" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size x="98"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Map" x="4"/>
+					</Anchors>
+                </FontString>
 
                 <Texture parentKey="IconTeamPlayerClass1">
                     <Size x="20" y="20"/>
@@ -37,24 +39,28 @@
 						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Duration"/>
 					</Anchors>
                 </Texture>
+
                 <Texture parentKey="IconTeamPlayerClass2">
                     <Size x="20" y="20"/>
 					<Anchors>
 						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconTeamPlayerClass1"/>
 					</Anchors>
                 </Texture>
+
                 <Texture parentKey="IconTeamPlayerClass3">
                     <Size x="20" y="20"/>
 					<Anchors>
 						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconTeamPlayerClass2"/>
 					</Anchors>
                 </Texture>
+
                 <Texture parentKey="IconTeamPlayerClass4">
                     <Size x="20" y="20"/>
 					<Anchors>
 						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconTeamPlayerClass3"/>
 					</Anchors>
                 </Texture>
+
                 <Texture parentKey="IconTeamPlayerClass5">
                     <Size x="20" y="20"/>
 					<Anchors>
@@ -62,50 +68,68 @@
 					</Anchors>
                 </Texture>
 
-                <FontString parentKey="Rating" inherits="GameFontHighlightSmall" justifyH="CENTER">
-                    <Size x="36"/>
+                <FontString parentKey="Rating" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size x="60"/>
                     <Anchors>
                         <Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconTeamPlayerClass5" x="4"/>
+                    </Anchors>
+                </FontString>
+
+                <FontString parentKey="MMR" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size x="40"/>
+                    <Anchors>
+                        <Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Rating" x="8"/>
                     </Anchors>
                 </FontString>
 
                 <Texture parentKey="IconEnemyPlayer1">
                     <Size x="20" y="20"/>
 					<Anchors>
-						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.Rating" x="8"/>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.MMR" x="4"/>
 					</Anchors>
                 </Texture>
+
                 <Texture parentKey="IconEnemyPlayer2">
                     <Size x="20" y="20"/>
 					<Anchors>
 						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer1"/>
 					</Anchors>
                 </Texture>
+
                 <Texture parentKey="IconEnemyPlayer3">
                     <Size x="20" y="20"/>
 					<Anchors>
 						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer2"/>
 					</Anchors>
                 </Texture>
+
                 <Texture parentKey="IconEnemyPlayer4">
                     <Size x="20" y="20"/>
 					<Anchors>
 						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer3"/>
 					</Anchors>
                 </Texture>
+
                 <Texture parentKey="IconEnemyPlayer5">
                     <Size x="20" y="20"/>
 					<Anchors>
 						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer4"/>
 					</Anchors>
                 </Texture>
+
+                <FontString parentKey="EnemyMMR" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Size x="40"/>
+                    <Anchors>
+                        <Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer5" x="20"/>
+                    </Anchors>
+                </FontString>
+
                 <Texture parentKey="EnemyFaction">
                     <Size x="20" y="20"/>
 					<Anchors>
-						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.IconEnemyPlayer5" x="25"/>
+						<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.EnemyMMR" x="50"/>
 					</Anchors>
                 </Texture>
-
 
             </Layer>
             <Layer level="HIGHLIGHT">

@@ -9,7 +9,7 @@ local exportFrame, exportEditBox
 function ArenaStats:CreateGUI()
     f = AceGUI:Create("Frame")
     f:Hide()
-    f:SetWidth(699)
+    f:SetWidth(859)
     f:EnableResize(false)
 
     f:SetTitle(addonTitle)
@@ -39,8 +39,10 @@ function ArenaStats:CreateGUI()
     ArenaStats:CreateScoreButton(tableHeader, 40, "Map")
     ArenaStats:CreateScoreButton(tableHeader, 94, "Duration")
     ArenaStats:CreateScoreButton(tableHeader, 100, "Team")
-    ArenaStats:CreateScoreButton(tableHeader, 40, "Rating")
+    ArenaStats:CreateScoreButton(tableHeader, 64, "Rating")
+    ArenaStats:CreateScoreButton(tableHeader, 40, "MMR")
     ArenaStats:CreateScoreButton(tableHeader, 100, "Enemy Team")
+    ArenaStats:CreateScoreButton(tableHeader, 75, "Enemy MMR")
     ArenaStats:CreateScoreButton(tableHeader, 80, "Enemy Faction")
 
     -- TABLE
@@ -116,8 +118,12 @@ function ArenaStats:RefreshLayout()
                                                        row["teamPlayerClass4"]))
             button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(
                                                        row["teamPlayerClass5"]))
-            button.Rating:SetText(row["diffRating"])
+            button.Rating:SetText((row["newTeamRating"] or "-") .. " (" ..
+                                      ((row["diffRating"] and row["diffRating"] >
+                                          0 and "+" .. row["diffRating"] or
+                                          row["diffRating"]) or "0") .. ")")
             button.Rating:SetTextColor(self:ColorForRating(row["diffRating"]))
+            button.MMR:SetText(row["mmr"] or "-")
             button.IconEnemyPlayer1:SetTexture(self:ClassIconId(
                                                    row["enemyPlayerClass1"]))
             button.IconEnemyPlayer2:SetTexture(self:ClassIconId(
@@ -130,6 +136,7 @@ function ArenaStats:RefreshLayout()
                                                    row["enemyPlayerClass5"]))
             button.IconEnemyPlayer5:SetTexture(self:ClassIconId(
                                                    row["enemyPlayerClass5"]))
+            button.EnemyMMR:SetText(row["enemyMmr"] or "-")
             button.EnemyFaction:SetTexture(self:FactionIconId(
                                                row["enemyFaction"]))
 

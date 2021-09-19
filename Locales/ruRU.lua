@@ -31,6 +31,8 @@ L["Duration"] = "Duration"
 --[[Translation missing --]]
 L["Enemy Faction"] = "Enemy Faction"
 --[[Translation missing --]]
+L["Enemy MMR"] = "Enemy MMR"
+--[[Translation missing --]]
 L["Enemy Team"] = "Enemy Team"
 --[[Translation missing --]]
 L["Export"] = "Export"
@@ -42,6 +44,8 @@ L["Map"] = "Map"
 L["Maximum history records"] = "Maximum history records"
 --[[Translation missing --]]
 L["Minimap Button Settings"] = "Minimap Button Settings"
+--[[Translation missing --]]
+L["MMR"] = "MMR"
 --[[Translation missing --]]
 L["NA"] = "NA"
 --[[Translation missing --]]
