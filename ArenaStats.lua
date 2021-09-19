@@ -190,10 +190,7 @@ function ArenaStats:Reset()
     self.arenaEnded = false
     self.current["status"] = "none"
 
-    for k in pairs(self.current["stats"]) do self.current["stats"][k] = nil end
     self.current["stats"] = {}
-
-    for k in pairs(self.current["units"]) do self.current["units"][k] = nil end
     self.current["units"] = {}
 end
 
@@ -264,7 +261,8 @@ function ArenaStats:BuildTable()
             ["endTime"] = row["endTime"],
             ["zoneId"] = row["zoneId"],
             ["isRanked"] = row["isRanked"],
-            ["duration"] = (row["endTime"] - row["startTime"]),
+            ["duration"] = (row["endTime"] and row["startTime"] and
+                (row["endTime"] - row["startTime"]) or 0),
 
             -- Player's team
 
