@@ -450,37 +450,37 @@ function ArenaStats:ExportCSV()
                   (row["enemyTeamName"] ~= nil and row["enemyTeamName"] or "") ..
                   "," ..
 
-                  (row["enemyName"][0] ~= nil and row["enemyName"][0] or "") ..
-                  "," ..
-                  (row["enemyName"][1] ~= nil and row["enemyName"][1] or "") ..
-                  "," ..
-                  (row["enemyName"][2] ~= nil and row["enemyName"][2] or "") ..
-                  "," ..
-                  (row["enemyName"][3] ~= nil and row["enemyName"][3] or "") ..
-                  "," ..
-                  (row["enemyName"][4] ~= nil and row["enemyName"][4] or "") ..
-                  "," ..
-                  (row["enemyClass"][0] ~= nil and row["enemyClass"][0] or "") ..
-                  "," ..
-                  (row["enemyClass"][1] ~= nil and row["enemyClass"][1] or "") ..
-                  "," ..
-                  (row["enemyClass"][2] ~= nil and row["enemyClass"][2] or "") ..
-                  "," ..
-                  (row["enemyClass"][3] ~= nil and row["enemyClass"][3] or "") ..
-                  "," ..
-                  (row["enemyClass"][4] ~= nil and row["enemyClass"][4] or "") ..
-                  "," ..
-                  (row["enemyRace"][0] ~= nil and row["enemyRace"][0] or "") ..
-                  "," ..
-                  (row["enemyRace"][1] ~= nil and row["enemyRace"][1] or "") ..
-                  "," ..
-                  (row["enemyRace"][2] ~= nil and row["enemyRace"][2] or "") ..
-                  "," ..
-                  (row["enemyRace"][3] ~= nil and row["enemyRace"][3] or "") ..
-                  "," ..
-                  (row["enemyRace"][4] ~= nil and row["enemyRace"][4] or "") ..
-                  "," .. (self:ComputeFaction(row["enemyFaction"])) .. "," ..
-                  "\n"
+                  (row["enemyName"] and row["enemyName"][0] ~= nil and
+                      row["enemyName"][0] or "") .. "," ..
+                  (row["enemyName"] and row["enemyName"][1] ~= nil and
+                      row["enemyName"][1] or "") .. "," ..
+                  (row["enemyName"] and row["enemyName"][2] ~= nil and
+                      row["enemyName"][2] or "") .. "," ..
+                  (row["enemyName"] and row["enemyName"][3] ~= nil and
+                      row["enemyName"][3] or "") .. "," ..
+                  (row["enemyName"] and row["enemyName"][4] ~= nil and
+                      row["enemyName"][4] or "") .. "," ..
+                  (row["enemyClass"] and row["enemyClass"][0] ~= nil and
+                      row["enemyClass"][0] or "") .. "," ..
+                  (row["enemyClass"] and row["enemyClass"][1] ~= nil and
+                      row["enemyClass"][1] or "") .. "," ..
+                  (row["enemyClass"] and row["enemyClass"][2] ~= nil and
+                      row["enemyClass"][2] or "") .. "," ..
+                  (row["enemyClass"] and row["enemyClass"][3] ~= nil and
+                      row["enemyClass"][3] or "") .. "," ..
+                  (row["enemyClass"] and row["enemyClass"][4] ~= nil and
+                      row["enemyClass"][4] or "") .. "," ..
+                  (row["enemyRace"] and row["enemyRace"][0] ~= nil and
+                      row["enemyRace"][0] or "") .. "," ..
+                  (row["enemyRace"] and row["enemyRace"][1] ~= nil and
+                      row["enemyRace"][1] or "") .. "," ..
+                  (row["enemyRace"] and row["enemyRace"][2] ~= nil and
+                      row["enemyRace"][2] or "") .. "," ..
+                  (row["enemyRace"] and row["enemyRace"][3] ~= nil and
+                      row["enemyRace"][3] or "") .. "," ..
+                  (row["enemyRace"] and row["enemyRace"][4] ~= nil and
+                      row["enemyRace"][4] or "") .. "," ..
+                  (self:ComputeFaction(row["enemyFaction"])) .. "," .. "\n"
     end
 
     ArenaStats:ExportFrame().eb:SetText(csv)
