@@ -69,6 +69,7 @@ Responds to console with **/arenastats** and a minimap button.
 ### Common
 
 - Add a setting to disable the recording of skirmishes (suggested by @TheDonkeyPower)
+- Show who won a skirmish
 - Detect spec
 
 ### In game gui:
