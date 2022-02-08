@@ -91,6 +91,15 @@ function ArenaStats:CreateScoreButton(tableHeader, width, localeStr)
     tableHeader:AddChild(margin)
 end
 
+function ArenaStats:SortClassTable(a, b)
+-- regular sort, pushes nils to end
+    if (not a or not b) then
+        return not b
+    else
+        return a < b
+    end
+end
+
 function ArenaStats:RefreshLayout()
     local buttons = _G.HybridScrollFrame_GetButtons(scrollFrame)
     local offset = _G.HybridScrollFrame_GetOffset(scrollFrame)
@@ -107,35 +116,29 @@ function ArenaStats:RefreshLayout()
             button.Date:SetText(_G.date(L["%F %T"], row["endTime"]))
             button.Map:SetText(self:ZoneNameShort(row["zoneId"]))
             button.Duration:SetText(self:HumanDuration(row["duration"]))
+            local teamClasses = {row["teamPlayerClass1"], row["teamPlayerClass2"], row["teamPlayerClass3"], row["teamPlayerClass4"], row["teamPlayerClass5"]}
+            table.sort(teamClasses, function (a,b) return ArenaStats:SortClassTable(a,b) end)
 
-            button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(
-                                                       row["teamPlayerClass1"]))
-            button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(
-                                                       row["teamPlayerClass2"]))
-            button.IconTeamPlayerClass3:SetTexture(self:ClassIconId(
-                                                       row["teamPlayerClass3"]))
-            button.IconTeamPlayerClass4:SetTexture(self:ClassIconId(
-                                                       row["teamPlayerClass4"]))
-            button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(
-                                                       row["teamPlayerClass5"]))
+            button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(teamClasses[1]))
+            button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(teamClasses[2]))
+            button.IconTeamPlayerClass3:SetTexture(self:ClassIconId(teamClasses[3]))
+            button.IconTeamPlayerClass4:SetTexture(self:ClassIconId(teamClasses[4]))
+            button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(teamClasses[5]))
             button.Rating:SetText((row["newTeamRating"] or "-") .. " (" ..
                                       ((row["diffRating"] and row["diffRating"] >
                                           0 and "+" .. row["diffRating"] or
                                           row["diffRating"]) or "0") .. ")")
             button.Rating:SetTextColor(self:ColorForRating(row["diffRating"]))
             button.MMR:SetText(row["mmr"] or "-")
-            button.IconEnemyPlayer1:SetTexture(self:ClassIconId(
-                                                   row["enemyPlayerClass1"]))
-            button.IconEnemyPlayer2:SetTexture(self:ClassIconId(
-                                                   row["enemyPlayerClass2"]))
-            button.IconEnemyPlayer3:SetTexture(self:ClassIconId(
-                                                   row["enemyPlayerClass3"]))
-            button.IconEnemyPlayer4:SetTexture(self:ClassIconId(
-                                                   row["enemyPlayerClass4"]))
-            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(
-                                                   row["enemyPlayerClass5"]))
-            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(
-                                                   row["enemyPlayerClass5"]))
+
+            local enemyClasses = {row["enemyPlayerClass1"], row["enemyPlayerClass2"], row["enemyPlayerClass3"], row["enemyPlayerClass4"], row["enemyPlayerClass5"]}
+            table.sort(enemyClasses, function (a,b) return ArenaStats:SortClassTable(a,b) end)
+
+            button.IconEnemyPlayer1:SetTexture(self:ClassIconId(enemyClasses[1]))
+            button.IconEnemyPlayer2:SetTexture(self:ClassIconId(enemyClasses[2]))
+            button.IconEnemyPlayer3:SetTexture(self:ClassIconId(enemyClasses[3]))
+            button.IconEnemyPlayer4:SetTexture(self:ClassIconId(enemyClasses[4]))
+            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(enemyClasses[5]))
             button.EnemyMMR:SetText(row["enemyMmr"] or "-")
             button.EnemyFaction:SetTexture(self:FactionIconId(
                                                row["enemyFaction"]))
