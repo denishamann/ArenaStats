@@ -8,11 +8,12 @@ local libDBIcon = _G.LibStub("LibDBIcon-1.0")
 local AceSerializer = _G.LibStub("AceSerializer-3.0")
 local IsActiveBattlefieldArena = IsActiveBattlefieldArena
 local GetBattlefieldStatus, GetBattlefieldTeamInfo, GetNumBattlefieldScores,
-      GetBattlefieldScore, GetBattlefieldWinner = GetBattlefieldStatus,
+      GetBattlefieldScore, GetBattlefieldWinner, IsArenaSkirmish = GetBattlefieldStatus,
                                                   GetBattlefieldTeamInfo,
                                                   GetNumBattlefieldScores,
                                                   GetBattlefieldScore,
-                                                  GetBattlefieldWinner
+                                                  GetBattlefieldWinner,
+                                                  IsArenaSkirmish
 local UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer =
     UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer
 local IsInGroup = IsInGroup
@@ -43,7 +44,7 @@ function ArenaStats:UPDATE_BATTLEFIELD_STATUS(_, index)
     if (status == "active" and teamSize > 0 and IsActiveBattlefieldArena()) then
         self.arenaEnded = false
         self.current["status"] = status
-        self.current["stats"]["isRanked"] = isRankedArena
+        self.current["stats"]["isRanked"] = not IsArenaSkirmish()
         self.current["stats"]["zoneId"] = self:ZoneId(mapName)
         if (self.current["stats"]["startTime"] == nil or
             self.current["stats"]["startTime"] == '') then
@@ -507,7 +508,7 @@ end
 function ArenaStats:YesOrNo(bool)
     if bool then
         return "YES"
-    elseif bool == 0 then
+    elseif not bool then
         return "NO"
     end
     return ""
