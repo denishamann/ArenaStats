@@ -46,6 +46,7 @@ function ArenaStats:UPDATE_BATTLEFIELD_STATUS(_, index)
         self.current["status"] = status
         self.current["stats"]["isRanked"] = not IsArenaSkirmish()
         self.current["stats"]["zoneId"] = self:ZoneId(mapName)
+        self.current["stats"]["teamSize"] = teamSize
         if (self.current["stats"]["startTime"] == nil or
             self.current["stats"]["startTime"] == '') then
             self.current["stats"]["startTime"] = _G.time()
@@ -247,6 +248,20 @@ function ArenaStats:ToggleMinimapButton()
     end
 end
 
+function ArenaStats:CalculateTeamSize(row)
+    if (row["teamSize"] ~= nil or row["teamClass"] == nil) then
+        return row["teamSize"]
+    end
+
+    local ts = 0
+    for i=0, 5 do
+        if row["teamClass"][i] ~= nil then
+            ts = ts + 1
+        end
+    end
+    return ts
+end
+
 function ArenaStats:BuildTable()
     local tbl = {}
 
@@ -262,6 +277,7 @@ function ArenaStats:BuildTable()
             ["endTime"] = row["endTime"],
             ["zoneId"] = row["zoneId"],
             ["isRanked"] = row["isRanked"],
+            ["teamSize"] = ArenaStats:CalculateTeamSize(row),
             ["duration"] = (row["endTime"] and row["startTime"] and
                 (row["endTime"] - row["startTime"]) or 0),
 
