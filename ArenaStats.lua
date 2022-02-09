@@ -9,12 +9,15 @@ local AceSerializer = _G.LibStub("AceSerializer-3.0")
 local LibRaces = _G.LibStub("LibRaces-1.0")
 local IsActiveBattlefieldArena = IsActiveBattlefieldArena
 local GetBattlefieldStatus, GetBattlefieldTeamInfo, GetNumBattlefieldScores,
-      GetBattlefieldScore, GetBattlefieldWinner, IsArenaSkirmish = GetBattlefieldStatus,
+      GetBattlefieldScore, GetBattlefieldWinner, IsArenaSkirmish, IsInInstance,
+      GetInstanceInfo                            = GetBattlefieldStatus,
                                                   GetBattlefieldTeamInfo,
                                                   GetNumBattlefieldScores,
                                                   GetBattlefieldScore,
                                                   GetBattlefieldWinner,
-                                                  IsArenaSkirmish
+                                                  IsArenaSkirmish,
+                                                  IsInInstance,
+                                                  GetInstanceInfo
 local UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer =
     UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer
 
@@ -50,9 +53,8 @@ function ArenaStats:UPDATE_BATTLEFIELD_STATUS(_, index)
         GetBattlefieldStatus(index)
     if (status == "active" and teamSize > 0 and IsActiveBattlefieldArena()) then
         self.current["status"] = status
-        self.current["stats"]["isRanked"] = not IsArenaSkirmish()
-        self.current["stats"]["zoneId"] = self:ZoneId(mapName)
         self.current["stats"]["teamSize"] = teamSize
+        self.current["stats"]["isRanked"] = not IsArenaSkirmish()
         if (self.current["stats"]["startTime"] == nil or
             self.current["stats"]["startTime"] == '') then
             self.current["stats"]["startTime"] = _G.time()
@@ -165,6 +167,7 @@ function ArenaStats:UPDATE_BATTLEFIELD_SCORE()
     if battlefieldWinner == nil or self.arenaEnded then return end
 
     if self.current.status ~= 'none' then
+        self.current["stats"]["zoneId"] = select(8, GetInstanceInfo())
         self.current["stats"]["endTime"] = _G.time()
         self.arenaEnded = true
         self:SetLastArenaRankingData()
@@ -260,7 +263,7 @@ function ArenaStats:BuildTable()
 
             ["startTime"] = row["startTime"],
             ["endTime"] = row["endTime"],
-            ["zoneId"] = row["zoneId"],
+            ["zoneId"] = ArenaStats:ZoneIdRemap(row["zoneId"]),
             ["isRanked"] = row["isRanked"],
             ["teamSize"] = ArenaStats:CalculateTeamSize(row),
             ["duration"] = (row["endTime"] and row["startTime"] and
@@ -347,37 +350,16 @@ function ArenaStats:BuildTable()
     return tbl
 end
 
-function ArenaStats:ZoneId(zoneName, x)
-    if zoneName == L["Nagrand Arena"] then
-        return 3698
-    elseif zoneName == L["Blade's Edge Arena"] then
-        return 3702
-    elseif zoneName == L["Ruins of Lordaeron"] then
-        return 3968
+function ArenaStats:ZoneIdRemap(mapareaid)
+    -- remap old mapareaid to instanceids
+    if mapareaid == 3698 then
+        return 559
+    elseif mapareaid == 3702 then
+        return 562
+    elseif mapareaid == 3968 then
+        return 572
     end
-    return nil
-end
-
-function ArenaStats:ZoneNameShort(zoneId)
-    if zoneId == 3698 then
-        return L["NA"]
-    elseif zoneId == 3702 then
-        return L["BEA"]
-    elseif zoneId == 3968 then
-        return L["RoL"]
-    end
-    return nil
-end
-
-function ArenaStats:ZoneName(zoneId)
-    if zoneId == 3698 then
-        return L["Nagrand Arena"]
-    elseif zoneId == 3702 then
-        return L["Blade's Edge Arena"]
-    elseif zoneId == 3968 then
-        return L["Ruins of Lordaeron"]
-    end
-    return nil
+    return mapareaid
 end
 
 function ArenaStats:ResetDatabase()

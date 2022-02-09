@@ -4,9 +4,55 @@ local addonTitle = select(2, _G.GetAddOnInfo(addonName))
 local ArenaStats = _G.LibStub("AceAddon-3.0"):GetAddon(addonName)
 local L = _G.LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 local AceGUI = _G.LibStub("AceGUI-3.0")
+local sbyte = _G.string.byte
 
 local filters, asGui
 local rows, filtered
+
+function ArenaStats:CSize(char)
+	if not char then
+		return 0
+	elseif char > 240 then
+		return 4
+	elseif char > 225 then
+		return 3
+	elseif char > 192 then
+		return 2
+	else
+		return 1
+	end
+end
+
+function ArenaStats:StrSub(str, startChar, numChars)
+	local startIndex = 1
+	while startChar > 1 do
+		local char = sbyte(str, startIndex)
+		startIndex = startIndex + ArenaStats:CSize(char)
+		startChar = startChar - 1
+	end
+	local currentIndex = startIndex
+	while numChars > 0 and currentIndex <= #str do
+		local char = sbyte(str, currentIndex)
+		currentIndex = currentIndex + ArenaStats:CSize(char)
+		numChars = numChars -1
+	end
+	return str:sub(startIndex, currentIndex - 1)
+end
+
+function ArenaStats:CreateShortMapName(mapName)
+    local mapNameTemp = {strsplit(" ", mapName)}
+	local mapShortName = ""
+	for i=1, #mapNameTemp do
+		mapShortName = mapShortName..ArenaStats:StrSub(mapNameTemp[i],0,1)
+	end
+	return mapShortName
+end
+
+ArenaStats.mapListShortName = {
+    [559] = ArenaStats:CreateShortMapName(GetRealZoneText(559)),
+    [562] = ArenaStats:CreateShortMapName(GetRealZoneText(562)),
+    [572] = ArenaStats:CreateShortMapName(GetRealZoneText(572)),
+}
 
 function ArenaStats:CreateGUI()
     asGui = {}
@@ -171,7 +217,7 @@ function ArenaStats:RefreshLayout()
         if (itemIndex <= #filtered) then
             button:SetID(itemIndex)
             button.Date:SetText(_G.date(L["%F %T"], row["endTime"]))
-            button.Map:SetText(self:ZoneNameShort(row["zoneId"]))
+            button.Map:SetText(self:GetShortMapName(row["zoneId"]))
             button.Duration:SetText(self:HumanDuration(row["duration"]))
             local teamClasses = {row["teamPlayerClass1"], row["teamPlayerClass2"], row["teamPlayerClass3"], row["teamPlayerClass4"], row["teamPlayerClass5"]}
             table.sort(teamClasses, function (a,b) return ArenaStats:SortClassTable(a,b) end)
@@ -288,6 +334,15 @@ function ArenaStats:ColorForRating(rating)
         return 255, 0, 0, 1
     else
         return 0, 255, 0, 1
+    end
+end
+
+function ArenaStats:GetShortMapName(id)
+    local name = ArenaStats.mapListShortName[id]
+    if name then
+        return name
+    else
+        return "E"..id
     end
 end
 
