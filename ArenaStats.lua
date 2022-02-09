@@ -27,6 +27,7 @@ function ArenaStats:OnInitialize()
 
     self:RegisterEvent("UPDATE_BATTLEFIELD_STATUS")
     self:RegisterEvent("UPDATE_BATTLEFIELD_SCORE")
+    self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
     self:DrawMinimapIcon()
     self:RegisterOptionsTable()
@@ -36,12 +37,18 @@ function ArenaStats:OnInitialize()
     self:Reset()
 end
 
+function ArenaStats:ZONE_CHANGED_NEW_AREA()
+    local _, instanceType = IsInInstance()
+    if (instanceType == "arena") then
+        self.arenaEnded = false
+    end
+end
+
 function ArenaStats:UPDATE_BATTLEFIELD_STATUS(_, index)
     local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize,
           isRankedArena, suspendedQueue, bool, queueType =
         GetBattlefieldStatus(index)
     if (status == "active" and teamSize > 0 and IsActiveBattlefieldArena()) then
-        self.arenaEnded = false
         self.current["status"] = status
         self.current["stats"]["isRanked"] = not IsArenaSkirmish()
         self.current["stats"]["zoneId"] = self:ZoneId(mapName)
@@ -168,7 +175,6 @@ function ArenaStats:UPDATE_BATTLEFIELD_SCORE()
 end
 
 function ArenaStats:Reset()
-    self.arenaEnded = false
     self.current["status"] = "none"
 
     self.current["stats"] = {}
