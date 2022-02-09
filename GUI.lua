@@ -14,7 +14,8 @@ function ArenaStats:CreateGUI()
     filtered = {}
     rows = {}
 
-    filters.bracket = 0;
+    filters.bracket = 0
+    filters.arenatype = 0
 
     asGui.f = AceGUI:Create("Frame")
     asGui.f:Hide()
@@ -35,11 +36,18 @@ function ArenaStats:CreateGUI()
     asGui.f:AddChild(exportButton)
 
     local bracketsizedd = AceGUI:Create("Dropdown")
-    bracketsizedd:SetWidth(100)
+    bracketsizedd:SetWidth(80)
     bracketsizedd:SetCallback("OnValueChanged", function(_, _, val) ArenaStats:OnBracketChange(val) end)
     bracketsizedd:SetList({[0] = _G.ALL, [2] = "2v2", [3] = "3v3", [5] = "5v5"})
     bracketsizedd:SetValue(filters.bracket)
     asGui.f:AddChild(bracketsizedd)
+
+    local arenatypedd = AceGUI:Create("Dropdown")
+    arenatypedd:SetWidth(100)
+    arenatypedd:SetCallback("OnValueChanged", function(_,_, val) ArenaStats:OnArenaTypeChange(val) end)
+    arenatypedd:SetList({[0] = _G.ALL, [true] = _G.ARENA_RATED, [false] = _G.ARENA_CASUAL})
+    arenatypedd:SetValue(filters.arenatype)
+    asGui.f:AddChild(arenatypedd)
 
     -- TABLE HEADER
     local tableHeader = AceGUI:Create("SimpleGroup")
@@ -103,6 +111,12 @@ function ArenaStats:OnBracketChange(key)
 	self:UpdateTableView()
 end
 
+function ArenaStats:OnArenaTypeChange(key)
+    filters.arenatype = key
+    self:SortTable()
+    self:UpdateTableView()
+end
+
 function ArenaStats:CreateScoreButton(tableHeader, width, localeStr)
     local btn = AceGUI:Create("Label")
     btn:SetWidth(width)
@@ -115,10 +129,10 @@ function ArenaStats:CreateScoreButton(tableHeader, width, localeStr)
 end
 
 function ArenaStats:FilterRow(row)
-    if (filters.bracket <= 1) then
-        return false
+    if (filters.bracket ~= 0 and row["teamSize"] ~= filters.bracket) then
+        return true
     end
-    if (row["teamSize"] ~= filters.bracket) then
+    if (filters.arenatype ~= 0 and row["isRanked"] ~= filters.arenatype) then
         return true
     end
     return false
