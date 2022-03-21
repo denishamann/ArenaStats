@@ -10,14 +10,10 @@ local LibRaces = _G.LibStub("LibRaces-1.0")
 local IsActiveBattlefieldArena = IsActiveBattlefieldArena
 local GetBattlefieldStatus, GetBattlefieldTeamInfo, GetNumBattlefieldScores,
       GetBattlefieldScore, GetBattlefieldWinner, IsArenaSkirmish, IsInInstance,
-      GetInstanceInfo                            = GetBattlefieldStatus,
-                                                  GetBattlefieldTeamInfo,
-                                                  GetNumBattlefieldScores,
-                                                  GetBattlefieldScore,
-                                                  GetBattlefieldWinner,
-                                                  IsArenaSkirmish,
-                                                  IsInInstance,
-                                                  GetInstanceInfo
+      GetInstanceInfo = GetBattlefieldStatus, GetBattlefieldTeamInfo,
+                        GetNumBattlefieldScores, GetBattlefieldScore,
+                        GetBattlefieldWinner, IsArenaSkirmish, IsInInstance,
+                        GetInstanceInfo
 local UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer =
     UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer
 
@@ -42,9 +38,7 @@ end
 
 function ArenaStats:ZONE_CHANGED_NEW_AREA()
     local _, instanceType = IsInInstance()
-    if (instanceType == "arena") then
-        self.arenaEnded = false
-    end
+    if (instanceType == "arena") then self.arenaEnded = false end
 end
 
 function ArenaStats:UPDATE_BATTLEFIELD_STATUS(_, index)
@@ -90,7 +84,7 @@ function ArenaStats:SetLastArenaRankingData()
 
     for i = 0, 1 do
         local teamName, oldTeamRating, newTeamRating, teamMMR =
-            GetBattlefieldTeamInfo(i);
+            GetBattlefieldTeamInfo(i)
         if teamMMR > 0 then
             if ((i == 0 and playerTeam == 'GREEN') or
                 (i == 1 and playerTeam == 'GOLD')) then
@@ -125,22 +119,22 @@ function ArenaStats:SetLastArenaRankingData()
         playerTeamTable = greenTeam
         enemyTeamTable = goldTeam
     end
-    
+
     -- playerName, killingBlows, honorKills, deaths, honorGained, faction, rank, race, class, classToken, damageDone, healingDone
-    for i = 1, #playerTeamTable do 
+    for i = 1, #playerTeamTable do
         local row = playerTeamTable[i]
         local race = LibRaces:GetRaceToken(row[8]):upper()
-        self.current["stats"]["teamClass"][i-1] = row[10]:upper()
-        self.current["stats"]["teamCharName"][i-1] = row[1]
-        self.current["stats"]["teamRace"][i-1] = race
+        self.current["stats"]["teamClass"][i - 1] = row[10]:upper()
+        self.current["stats"]["teamCharName"][i - 1] = row[1]
+        self.current["stats"]["teamRace"][i - 1] = race
     end
 
     for i = 1, #enemyTeamTable do
         local row = enemyTeamTable[i]
         local race = LibRaces:GetRaceToken(row[8]):upper()
-        self.current["stats"]["enemyClass"][i-1] = row[10]:upper()
-        self.current["stats"]["enemyName"][i-1] = row[1]
-        self.current["stats"]["enemyRace"][i-1] = race
+        self.current["stats"]["enemyClass"][i - 1] = row[10]:upper()
+        self.current["stats"]["enemyName"][i - 1] = row[1]
+        self.current["stats"]["enemyRace"][i - 1] = race
         self.current["stats"]["enemyFaction"] = self:RaceToFaction(race)
     end
 end
@@ -171,9 +165,7 @@ function ArenaStats:UPDATE_BATTLEFIELD_SCORE()
         self.current["stats"]["endTime"] = _G.time()
         self.arenaEnded = true
         self:SetLastArenaRankingData()
-        if GetNumBattlefieldScores() ~= 0 then
-            self:RecordArena()
-        end
+        if GetNumBattlefieldScores() ~= 0 then self:RecordArena() end
     end
 end
 
@@ -241,13 +233,9 @@ function ArenaStats:CalculateTeamSize(row)
         return row["teamSize"]
     end
 
-    local ts = 0
-    for i=0, 5 do
-        if row["teamClass"][i] ~= nil then
-            ts = ts + 1
-        end
-    end
-    return ts
+    local teamSize = 0
+    for i = 0, 5 do if row["teamClass"][i] ~= nil then teamSize = teamSize + 1 end end
+    return teamSize
 end
 
 function ArenaStats:BuildTable()
@@ -263,7 +251,7 @@ function ArenaStats:BuildTable()
 
             ["startTime"] = row["startTime"],
             ["endTime"] = row["endTime"],
-            ["zoneId"] = ArenaStats:ZoneIdRemap(row["zoneId"]),
+            ["zoneId"] = ArenaStats:RemapZoneId(row["zoneId"]),
             ["isRanked"] = row["isRanked"],
             ["teamSize"] = ArenaStats:CalculateTeamSize(row),
             ["duration"] = (row["endTime"] and row["startTime"] and
@@ -350,16 +338,16 @@ function ArenaStats:BuildTable()
     return tbl
 end
 
-function ArenaStats:ZoneIdRemap(mapareaid)
-    -- remap old mapareaid to instanceids
-    if mapareaid == 3698 then
+function ArenaStats:RemapZoneId(mapAreaId)
+    -- remap old mapAreaId to instanceids (for backward compatibility)
+    if mapAreaId == 3698 then
         return 559
-    elseif mapareaid == 3702 then
+    elseif mapAreaId == 3702 then
         return 562
-    elseif mapareaid == 3968 then
+    elseif mapAreaId == 3968 then
         return 572
     end
-    return mapareaid
+    return mapAreaId
 end
 
 function ArenaStats:ResetDatabase()

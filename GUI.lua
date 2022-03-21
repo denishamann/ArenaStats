@@ -10,48 +10,48 @@ local filters, asGui
 local rows, filtered
 
 function ArenaStats:CSize(char)
-	if not char then
-		return 0
-	elseif char > 240 then
-		return 4
-	elseif char > 225 then
-		return 3
-	elseif char > 192 then
-		return 2
-	else
-		return 1
-	end
+    if not char then
+        return 0
+    elseif char > 240 then
+        return 4
+    elseif char > 225 then
+        return 3
+    elseif char > 192 then
+        return 2
+    else
+        return 1
+    end
 end
 
 function ArenaStats:StrSub(str, startChar, numChars)
-	local startIndex = 1
-	while startChar > 1 do
-		local char = sbyte(str, startIndex)
-		startIndex = startIndex + ArenaStats:CSize(char)
-		startChar = startChar - 1
-	end
-	local currentIndex = startIndex
-	while numChars > 0 and currentIndex <= #str do
-		local char = sbyte(str, currentIndex)
-		currentIndex = currentIndex + ArenaStats:CSize(char)
-		numChars = numChars -1
-	end
-	return str:sub(startIndex, currentIndex - 1)
+    local startIndex = 1
+    while startChar > 1 do
+        local char = sbyte(str, startIndex)
+        startIndex = startIndex + ArenaStats:CSize(char)
+        startChar = startChar - 1
+    end
+    local currentIndex = startIndex
+    while numChars > 0 and currentIndex <= #str do
+        local char = sbyte(str, currentIndex)
+        currentIndex = currentIndex + ArenaStats:CSize(char)
+        numChars = numChars - 1
+    end
+    return str:sub(startIndex, currentIndex - 1)
 end
 
 function ArenaStats:CreateShortMapName(mapName)
     local mapNameTemp = {strsplit(" ", mapName)}
-	local mapShortName = ""
-	for i=1, #mapNameTemp do
-		mapShortName = mapShortName..ArenaStats:StrSub(mapNameTemp[i],0,1)
-	end
-	return mapShortName
+    local mapShortName = ""
+    for i = 1, #mapNameTemp do
+        mapShortName = mapShortName .. ArenaStats:StrSub(mapNameTemp[i], 0, 1)
+    end
+    return mapShortName
 end
 
 ArenaStats.mapListShortName = {
     [559] = ArenaStats:CreateShortMapName(GetRealZoneText(559)),
     [562] = ArenaStats:CreateShortMapName(GetRealZoneText(562)),
-    [572] = ArenaStats:CreateShortMapName(GetRealZoneText(572)),
+    [572] = ArenaStats:CreateShortMapName(GetRealZoneText(572))
 }
 
 function ArenaStats:CreateGUI()
@@ -61,7 +61,7 @@ function ArenaStats:CreateGUI()
     rows = {}
 
     filters.bracket = 0
-    filters.arenatype = 0
+    filters.arenaType = 0
 
     asGui.f = AceGUI:Create("Frame")
     asGui.f:Hide()
@@ -81,19 +81,32 @@ function ArenaStats:CreateGUI()
     exportButton:SetCallback("OnClick", function() ArenaStats:ExportCSV() end)
     asGui.f:AddChild(exportButton)
 
-    local bracketsizedd = AceGUI:Create("Dropdown")
-    bracketsizedd:SetWidth(80)
-    bracketsizedd:SetCallback("OnValueChanged", function(_, _, val) ArenaStats:OnBracketChange(val) end)
-    bracketsizedd:SetList({[0] = _G.ALL, [2] = "2v2", [3] = "3v3", [5] = "5v5"})
-    bracketsizedd:SetValue(filters.bracket)
-    asGui.f:AddChild(bracketsizedd)
+    local bracketSizeDropdown = AceGUI:Create("Dropdown")
+    bracketSizeDropdown:SetWidth(80)
+    bracketSizeDropdown:SetCallback("OnValueChanged", function(_, _, val)
+        ArenaStats:OnBracketChange(val)
+    end)
+    bracketSizeDropdown:SetList({
+        [0] = _G.ALL,
+        [2] = "2v2",
+        [3] = "3v3",
+        [5] = "5v5"
+    })
+    bracketSizeDropdown:SetValue(filters.bracket)
+    asGui.f:AddChild(bracketSizeDropdown)
 
-    local arenatypedd = AceGUI:Create("Dropdown")
-    arenatypedd:SetWidth(100)
-    arenatypedd:SetCallback("OnValueChanged", function(_,_, val) ArenaStats:OnArenaTypeChange(val) end)
-    arenatypedd:SetList({[0] = _G.ALL, [true] = _G.ARENA_RATED, [false] = _G.ARENA_CASUAL})
-    arenatypedd:SetValue(filters.arenatype)
-    asGui.f:AddChild(arenatypedd)
+    local arenaTypeDropdown = AceGUI:Create("Dropdown")
+    arenaTypeDropdown:SetWidth(100)
+    arenaTypeDropdown:SetCallback("OnValueChanged", function(_, _, val)
+        ArenaStats:OnArenaTypeChange(val)
+    end)
+    arenaTypeDropdown:SetList({
+        [0] = _G.ALL,
+        [true] = _G.ARENA_RATED,
+        [false] = _G.ARENA_CASUAL
+    })
+    arenaTypeDropdown:SetValue(filters.arenaType)
+    asGui.f:AddChild(arenaTypeDropdown)
 
     -- TABLE HEADER
     local tableHeader = AceGUI:Create("SimpleGroup")
@@ -122,11 +135,12 @@ function ArenaStats:CreateGUI()
     scrollContainer:SetLayout("Fill")
     asGui.f:AddChild(scrollContainer)
 
-    asGui.scrollFrame = _G.CreateFrame("ScrollFrame", nil, scrollContainer.frame,
-                                 "ArenaStatsHybridScrollFrame")
+    asGui.scrollFrame = _G.CreateFrame("ScrollFrame", nil,
+                                       scrollContainer.frame,
+                                       "ArenaStatsHybridScrollFrame")
     _G.HybridScrollFrame_CreateButtons(asGui.scrollFrame,
                                        "ArenaStatsHybridScrollListItemTemplate")
-                                       asGui.scrollFrame.update = function() ArenaStats:UpdateTableView() end
+    asGui.scrollFrame.update = function() ArenaStats:UpdateTableView() end
 
     -- Export frame
 
@@ -152,13 +166,13 @@ end
 function ArenaStats:UpdateTableView() self:RefreshLayout() end
 
 function ArenaStats:OnBracketChange(key)
-	filters.bracket = key
+    filters.bracket = key
     self:SortTable()
-	self:UpdateTableView()
+    self:UpdateTableView()
 end
 
 function ArenaStats:OnArenaTypeChange(key)
-    filters.arenatype = key
+    filters.arenaType = key
     self:SortTable()
     self:UpdateTableView()
 end
@@ -178,7 +192,7 @@ function ArenaStats:FilterRow(row)
     if (filters.bracket ~= 0 and row["teamSize"] ~= filters.bracket) then
         return true
     end
-    if (filters.arenatype ~= 0 and row["isRanked"] ~= filters.arenatype) then
+    if (filters.arenaType ~= 0 and row["isRanked"] ~= filters.arenaType) then
         return true
     end
     return false
@@ -188,14 +202,12 @@ function ArenaStats:SortTable()
     filtered = {}
     for i = 1, #rows do
         local row = rows[i]
-        if (not self:FilterRow(row)) then
-            table.insert(filtered, row)
-        end
+        if (not self:FilterRow(row)) then table.insert(filtered, row) end
     end
 end
 
 function ArenaStats:SortClassTable(a, b)
--- regular sort, pushes nils to end
+    -- regular sort, pushes nils to end
     if (not a or not b) then
         return not b
     else
@@ -219,14 +231,25 @@ function ArenaStats:RefreshLayout()
             button.Date:SetText(_G.date(L["%F %T"], row["endTime"]))
             button.Map:SetText(self:GetShortMapName(row["zoneId"]))
             button.Duration:SetText(self:HumanDuration(row["duration"]))
-            local teamClasses = {row["teamPlayerClass1"], row["teamPlayerClass2"], row["teamPlayerClass3"], row["teamPlayerClass4"], row["teamPlayerClass5"]}
-            table.sort(teamClasses, function (a,b) return ArenaStats:SortClassTable(a,b) end)
+            local teamClasses = {
+                row["teamPlayerClass1"], row["teamPlayerClass2"],
+                row["teamPlayerClass3"], row["teamPlayerClass4"],
+                row["teamPlayerClass5"]
+            }
+            table.sort(teamClasses, function(a, b)
+                return ArenaStats:SortClassTable(a, b)
+            end)
 
-            button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(teamClasses[1]))
-            button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(teamClasses[2]))
-            button.IconTeamPlayerClass3:SetTexture(self:ClassIconId(teamClasses[3]))
-            button.IconTeamPlayerClass4:SetTexture(self:ClassIconId(teamClasses[4]))
-            button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(teamClasses[5]))
+            button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(
+                                                       teamClasses[1]))
+            button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(
+                                                       teamClasses[2]))
+            button.IconTeamPlayerClass3:SetTexture(self:ClassIconId(
+                                                       teamClasses[3]))
+            button.IconTeamPlayerClass4:SetTexture(self:ClassIconId(
+                                                       teamClasses[4]))
+            button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(
+                                                       teamClasses[5]))
             button.Rating:SetText((row["newTeamRating"] or "-") .. " (" ..
                                       ((row["diffRating"] and row["diffRating"] >
                                           0 and "+" .. row["diffRating"] or
@@ -234,8 +257,14 @@ function ArenaStats:RefreshLayout()
             button.Rating:SetTextColor(self:ColorForRating(row["diffRating"]))
             button.MMR:SetText(row["mmr"] or "-")
 
-            local enemyClasses = {row["enemyPlayerClass1"], row["enemyPlayerClass2"], row["enemyPlayerClass3"], row["enemyPlayerClass4"], row["enemyPlayerClass5"]}
-            table.sort(enemyClasses, function (a,b) return ArenaStats:SortClassTable(a,b) end)
+            local enemyClasses = {
+                row["enemyPlayerClass1"], row["enemyPlayerClass2"],
+                row["enemyPlayerClass3"], row["enemyPlayerClass4"],
+                row["enemyPlayerClass5"]
+            }
+            table.sort(enemyClasses, function(a, b)
+                return ArenaStats:SortClassTable(a, b)
+            end)
 
             button.IconEnemyPlayer1:SetTexture(self:ClassIconId(enemyClasses[1]))
             button.IconEnemyPlayer2:SetTexture(self:ClassIconId(enemyClasses[2]))
@@ -342,7 +371,7 @@ function ArenaStats:GetShortMapName(id)
     if name then
         return name
     else
-        return "E"..id
+        return "E" .. id
     end
 end
 
