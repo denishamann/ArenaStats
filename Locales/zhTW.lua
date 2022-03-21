@@ -13,10 +13,6 @@ L["%is"] = "%is"
 L["Battlegrounds records can impact memory usage (0 means unlimited)"] =
     "Battlegrounds records can impact memory usage (0 means unlimited)"
 --[[Translation missing --]]
-L["BEA"] = "BEA"
---[[Translation missing --]]
-L["Blade's Edge Arena"] = "Blade's Edge Arena"
---[[Translation missing --]]
 L["Database reset"] = "Database reset"
 --[[Translation missing --]]
 L["Database Settings"] = "Database Settings"
@@ -47,10 +43,6 @@ L["Minimap Button Settings"] = "Minimap Button Settings"
 --[[Translation missing --]]
 L["MMR"] = "MMR"
 --[[Translation missing --]]
-L["NA"] = "NA"
---[[Translation missing --]]
-L["Nagrand Arena"] = "Nagrand Arena"
---[[Translation missing --]]
 L["Opens or closes the main window"] = "Opens or closes the main window"
 --[[Translation missing --]]
 L["Options"] = "Options"
@@ -62,10 +54,6 @@ L["Rating"] = "Rating"
 L["Recorded %i arenas"] = "Recorded %i arenas"
 --[[Translation missing --]]
 L["Right Click"] = "Right Click"
---[[Translation missing --]]
-L["RoL"] = "RoL"
---[[Translation missing --]]
-L["Ruins of Lordaeron"] = "Ruins of Lordaeron"
 --[[Translation missing --]]
 L["Show minimap button"] = "Show minimap button"
 --[[Translation missing --]]

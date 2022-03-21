@@ -6,16 +6,16 @@ local ArenaStats = _G.LibStub("AceAddon-3.0"):NewAddon(addonName,
 local L = _G.LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 local libDBIcon = _G.LibStub("LibDBIcon-1.0")
 local AceSerializer = _G.LibStub("AceSerializer-3.0")
+local LibRaces = _G.LibStub("LibRaces-1.0")
 local IsActiveBattlefieldArena = IsActiveBattlefieldArena
 local GetBattlefieldStatus, GetBattlefieldTeamInfo, GetNumBattlefieldScores,
-      GetBattlefieldScore, GetBattlefieldWinner = GetBattlefieldStatus,
-                                                  GetBattlefieldTeamInfo,
-                                                  GetNumBattlefieldScores,
-                                                  GetBattlefieldScore,
-                                                  GetBattlefieldWinner
+      GetBattlefieldScore, GetBattlefieldWinner, IsArenaSkirmish, IsInInstance,
+      GetInstanceInfo = GetBattlefieldStatus, GetBattlefieldTeamInfo,
+                        GetNumBattlefieldScores, GetBattlefieldScore,
+                        GetBattlefieldWinner, IsArenaSkirmish, IsInInstance,
+                        GetInstanceInfo
 local UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer =
     UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer
-local IsInGroup = IsInGroup
 
 function ArenaStats:OnInitialize()
     self.db = _G.LibStub("AceDB-3.0"):New(addonName, {
@@ -26,7 +26,7 @@ function ArenaStats:OnInitialize()
 
     self:RegisterEvent("UPDATE_BATTLEFIELD_STATUS")
     self:RegisterEvent("UPDATE_BATTLEFIELD_SCORE")
-    self:RegisterEvent("ARENA_OPPONENT_UPDATE")
+    self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
     self:DrawMinimapIcon()
     self:RegisterOptionsTable()
@@ -36,15 +36,19 @@ function ArenaStats:OnInitialize()
     self:Reset()
 end
 
+function ArenaStats:ZONE_CHANGED_NEW_AREA()
+    local _, instanceType = IsInInstance()
+    if (instanceType == "arena") then self.arenaEnded = false end
+end
+
 function ArenaStats:UPDATE_BATTLEFIELD_STATUS(_, index)
     local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize,
           isRankedArena, suspendedQueue, bool, queueType =
         GetBattlefieldStatus(index)
     if (status == "active" and teamSize > 0 and IsActiveBattlefieldArena()) then
-        self.arenaEnded = false
         self.current["status"] = status
-        self.current["stats"]["isRanked"] = isRankedArena
-        self.current["stats"]["zoneId"] = self:ZoneId(mapName)
+        self.current["stats"]["teamSize"] = teamSize
+        self.current["stats"]["isRanked"] = not IsArenaSkirmish()
         if (self.current["stats"]["startTime"] == nil or
             self.current["stats"]["startTime"] == '') then
             self.current["stats"]["startTime"] = _G.time()
@@ -58,28 +62,29 @@ function ArenaStats:SetLastArenaRankingData()
     local greenTeam = {}
     local goldTeam = {}
     local myName = UnitName("player")
+    local numScores = GetNumBattlefieldScores()
 
-    for i = 1, GetNumBattlefieldScores() do
-        local playerName, killingBlows, honorKills, deaths, honorGained,
-              faction, rank, race, class, filename, damageDone, healingDone =
-            GetBattlefieldScore(i)
-        local teamIndex = select(6, GetBattlefieldScore(i))
-        if teamIndex == 0 then
-            table.insert(greenTeam, playerName)
-        else
-            table.insert(goldTeam, playerName)
+    for i = 1, numScores do
+        local data = {GetBattlefieldScore(i)}
+        local teamIndex = data[6]
+        if data[1] == myName then
+            if teamIndex == 0 then
+                playerTeam = 'GREEN'
+            else
+                playerTeam = 'GOLD'
+            end
         end
-    end
 
-    if self:Has_value(greenTeam, myName) then
-        playerTeam = 'GREEN'
-    elseif self:Has_value(goldTeam, myName) then
-        playerTeam = 'GOLD'
+        if teamIndex == 0 then
+            table.insert(greenTeam, data)
+        else
+            table.insert(goldTeam, data)
+        end
     end
 
     for i = 0, 1 do
         local teamName, oldTeamRating, newTeamRating, teamMMR =
-            GetBattlefieldTeamInfo(i);
+            GetBattlefieldTeamInfo(i)
         if teamMMR > 0 then
             if ((i == 0 and playerTeam == 'GREEN') or
                 (i == 1 and playerTeam == 'GOLD')) then
@@ -100,23 +105,55 @@ function ArenaStats:SetLastArenaRankingData()
         end
     end
 
+    self.current["stats"]["teamClass"] = {}
+    self.current["stats"]["teamCharName"] = {}
+    self.current["stats"]["teamRace"] = {}
+
     self.current["stats"]["enemyClass"] = {}
     self.current["stats"]["enemyName"] = {}
     self.current["stats"]["enemyRace"] = {}
-    local idx = 0
-    for k, v in pairs(self.current["units"]) do
-        self.current["stats"]["enemyClass"][idx] = v["class"]:upper()
-        self.current["stats"]["enemyName"][idx] = v["name"]
-        self.current["stats"]["enemyRace"][idx] = v["race"]:upper()
-        if self.current["stats"]["enemyFaction"] == nil then
-            if v["faction"] == 'Alliance' then
-                self.current["stats"]["enemyFaction"] = 1
-            else
-                self.current["stats"]["enemyFaction"] = 0
-            end
-        end
-        idx = idx + 1
+
+    local playerTeamTable = goldTeam
+    local enemyTeamTable = greenTeam
+    if (playerTeam == 'GREEN') then
+        playerTeamTable = greenTeam
+        enemyTeamTable = goldTeam
     end
+
+    -- playerName, killingBlows, honorKills, deaths, honorGained, faction, rank, race, class, classToken, damageDone, healingDone
+    for i = 1, #playerTeamTable do
+        local row = playerTeamTable[i]
+        local race = LibRaces:GetRaceToken(row[8]):upper()
+        self.current["stats"]["teamClass"][i - 1] = row[10]:upper()
+        self.current["stats"]["teamCharName"][i - 1] = row[1]
+        self.current["stats"]["teamRace"][i - 1] = race
+    end
+
+    for i = 1, #enemyTeamTable do
+        local row = enemyTeamTable[i]
+        local race = LibRaces:GetRaceToken(row[8]):upper()
+        self.current["stats"]["enemyClass"][i - 1] = row[10]:upper()
+        self.current["stats"]["enemyName"][i - 1] = row[1]
+        self.current["stats"]["enemyRace"][i - 1] = race
+        self.current["stats"]["enemyFaction"] = self:RaceToFaction(race)
+    end
+end
+
+function ArenaStats:RaceToFaction(race)
+    if race == "HUMAN" then
+        return 1
+    elseif race == "GNOME" then
+        return 1
+    elseif race == "NIGHTELF" then
+        return 1
+    elseif race == "DRAENEI" then
+        return 1
+    elseif race == "DWARF" then
+        return 1
+    else
+        return 0
+    end
+
 end
 
 function ArenaStats:UPDATE_BATTLEFIELD_SCORE()
@@ -124,70 +161,15 @@ function ArenaStats:UPDATE_BATTLEFIELD_SCORE()
     if battlefieldWinner == nil or self.arenaEnded then return end
 
     if self.current.status ~= 'none' then
+        self.current["stats"]["zoneId"] = select(8, GetInstanceInfo())
         self.current["stats"]["endTime"] = _G.time()
-        self.battlegroundEnded = true
+        self.arenaEnded = true
         self:SetLastArenaRankingData()
-        self:RecordArena()
-    end
-end
-
-function ArenaStats:ARENA_OPPONENT_UPDATE(_, unit, updateReason)
-    if updateReason == "seen" then
-        ArenaStats:SpotEnemy(unit)
-        ArenaStats:SetPartyData()
-    end
-end
-
-function ArenaStats:SpotEnemy(unit)
-    if UnitIsPlayer(unit) then
-        local guid = UnitGUID(unit)
-        local freshName, realm = UnitName(unit)
-        if freshName == "Unknown" then freshName = "" end
-        if (self.current["units"][guid] and
-            not self:StringIsempty(self.current["units"][guid]["name"])) then
-            freshName = self.current["units"][guid]["name"]
-        end
-
-        self.current["units"][guid] = {
-            class = select(2, UnitClass(unit)),
-            name = freshName,
-            race = select(2, UnitRace(unit)),
-            faction = select(2, UnitFactionGroup(unit))
-        }
-    end
-end
-
-function ArenaStats:SetPartyData()
-    if self.current["stats"]["teamClass"] == nil then
-        self.current["stats"]["teamClass"] = {}
-    end
-    if self.current["stats"]["teamCharName"] == nil then
-        self.current["stats"]["teamCharName"] = {}
-    end
-    if self.current["stats"]["teamRace"] == nil then
-        self.current["stats"]["teamRace"] = {}
-    end
-
-    self.current["stats"]["teamClass"][0] = select(2, UnitClass('player'))
-    self.current["stats"]["teamCharName"][0] = UnitName("player")
-    self.current["stats"]["teamRace"][0] = select(2, UnitRace("player"))
-
-    if IsInGroup() then
-        for i = 1, 4 do
-            if UnitClass('party' .. i) then
-                local _, englishClass = UnitClass('party' .. i)
-                local partyPlayerName = UnitName('party' .. i)
-                self.current["stats"]["teamClass"][i] = englishClass:upper()
-                self.current["stats"]["teamCharName"][i] = partyPlayerName
-                self.current["stats"]["teamRace"][i] = select(2, UnitRace(
-                                                                  'party' .. i))
-            end
-        end
+        if GetNumBattlefieldScores() ~= 0 then self:RecordArena() end
     end
 end
 
 function ArenaStats:Reset()
-    self.arenaEnded = false
     self.current["status"] = "none"
 
     self.current["stats"] = {}
@@ -246,6 +228,16 @@ function ArenaStats:ToggleMinimapButton()
     end
 end
 
+function ArenaStats:CalculateTeamSize(row)
+    if (row["teamSize"] ~= nil or row["teamClass"] == nil) then
+        return row["teamSize"]
+    end
+
+    local teamSize = 0
+    for i = 0, 5 do if row["teamClass"][i] ~= nil then teamSize = teamSize + 1 end end
+    return teamSize
+end
+
 function ArenaStats:BuildTable()
     local tbl = {}
 
@@ -259,8 +251,9 @@ function ArenaStats:BuildTable()
 
             ["startTime"] = row["startTime"],
             ["endTime"] = row["endTime"],
-            ["zoneId"] = row["zoneId"],
+            ["zoneId"] = ArenaStats:RemapZoneId(row["zoneId"]),
             ["isRanked"] = row["isRanked"],
+            ["teamSize"] = ArenaStats:CalculateTeamSize(row),
             ["duration"] = (row["endTime"] and row["startTime"] and
                 (row["endTime"] - row["startTime"]) or 0),
 
@@ -345,37 +338,16 @@ function ArenaStats:BuildTable()
     return tbl
 end
 
-function ArenaStats:ZoneId(zoneName, x)
-    if zoneName == L["Nagrand Arena"] then
-        return 3698
-    elseif zoneName == L["Blade's Edge Arena"] then
-        return 3702
-    elseif zoneName == L["Ruins of Lordaeron"] then
-        return 3968
+function ArenaStats:RemapZoneId(mapAreaId)
+    -- remap old mapAreaId to instanceids (for backward compatibility)
+    if mapAreaId == 3698 then
+        return 559
+    elseif mapAreaId == 3702 then
+        return 562
+    elseif mapAreaId == 3968 then
+        return 572
     end
-    return nil
-end
-
-function ArenaStats:ZoneNameShort(zoneId)
-    if zoneId == 3698 then
-        return L["NA"]
-    elseif zoneId == 3702 then
-        return L["BEA"]
-    elseif zoneId == 3968 then
-        return L["RoL"]
-    end
-    return nil
-end
-
-function ArenaStats:ZoneName(zoneId)
-    if zoneId == 3698 then
-        return L["Nagrand Arena"]
-    elseif zoneId == 3702 then
-        return L["Blade's Edge Arena"]
-    elseif zoneId == 3968 then
-        return L["Ruins of Lordaeron"]
-    end
-    return nil
+    return mapAreaId
 end
 
 function ArenaStats:ResetDatabase()
@@ -490,11 +462,6 @@ function ArenaStats:ExportCSV()
                                                   .editBox:GetNumLetters())
 end
 
-function ArenaStats:Has_value(tab, val)
-    for index, value in ipairs(tab) do if value == val then return true end end
-    return false
-end
-
 function ArenaStats:ComputeFaction(factionId)
     if factionId == 1 then
         return "ALLIANCE"
@@ -507,7 +474,7 @@ end
 function ArenaStats:YesOrNo(bool)
     if bool then
         return "YES"
-    elseif bool == 0 then
+    elseif not bool then
         return "NO"
     end
     return ""
@@ -521,5 +488,3 @@ function ArenaStats:ComputeSafeNumber(number)
     end
     return number
 end
-
-function ArenaStats:StringIsempty(s) return s == nil or s == '' end

@@ -140,18 +140,19 @@
         </Layers>
     </Frame>
 
-    <Frame name="ArenaStatsHybridScrollFrame" inherits="HybridScrollFrameTemplate" virtual="true">
+    <ScrollFrame name="ArenaStatsHybridScrollFrame" inherits="HybridScrollFrameTemplate" virtual="true">
         <Anchors>
             <Anchor point="TOPLEFT" x="2" y="-2"/>
             <Anchor point="BOTTOMRIGHT" x="-25" y="7"/>
         </Anchors>
+        
         <Frames>
-            <Slider parentKey="scrollBar" inherits="HybridScrollBarTemplate">
+            <Slider parentKey="scrollBar" inherits="MinimalHybridScrollBarTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="1" y="-16"/>
                     <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="1" y="12"/>
                 </Anchors>
             </Slider>
         </Frames>
-    </Frame>
+    </ScrollFrame>
 </Ui>
