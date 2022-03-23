@@ -370,8 +370,10 @@ function ArenaStats:GetShortMapName(id)
     local name = ArenaStats.mapListShortName[id]
     if name then
         return name
-    else
+    elseif id then
         return "E" .. id
+    else
+        return "E"
     end
 end
 
