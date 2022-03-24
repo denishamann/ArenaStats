@@ -33,6 +33,8 @@ L["Enemy Team"] = "Enemy Team"
 --[[Translation missing --]]
 L["Export"] = "Export"
 --[[Translation missing --]]
+L["Interface Settings"] = "Interface Settings"
+--[[Translation missing --]]
 L["Left Click"] = "Left Click"
 --[[Translation missing --]]
 L["Map"] = "Map"
@@ -42,6 +44,8 @@ L["Maximum history records"] = "Maximum history records"
 L["Minimap Button Settings"] = "Minimap Button Settings"
 --[[Translation missing --]]
 L["MMR"] = "MMR"
+--[[Translation missing --]]
+L["Names"] = "Names"
 --[[Translation missing --]]
 L["Opens or closes the main window"] = "Opens or closes the main window"
 --[[Translation missing --]]
@@ -54,6 +58,8 @@ L["Rating"] = "Rating"
 L["Recorded %i arenas"] = "Recorded %i arenas"
 --[[Translation missing --]]
 L["Right Click"] = "Right Click"
+--[[Translation missing --]]
+L["Show character names on hover"] = "Show character names on hover"
 --[[Translation missing --]]
 L["Show minimap button"] = "Show minimap button"
 --[[Translation missing --]]

@@ -19,7 +19,11 @@ local UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer =
 
 function ArenaStats:OnInitialize()
     self.db = _G.LibStub("AceDB-3.0"):New(addonName, {
-        profile = {minimapButton = {hide = false}, maxHistory = 0},
+        profile = {
+            minimapButton = {hide = false},
+            maxHistory = 0,
+            characterNamesOnHover = {hide = false}
+        },
         char = {history = {}}
     })
     self:Print("Tracking ready, have a nice session!")
@@ -234,7 +238,9 @@ function ArenaStats:CalculateTeamSize(row)
     end
 
     local teamSize = 0
-    for i = 0, 5 do if row["teamClass"][i] ~= nil then teamSize = teamSize + 1 end end
+    for i = 0, 5 do
+        if row["teamClass"][i] ~= nil then teamSize = teamSize + 1 end
+    end
     return teamSize
 end
 
@@ -487,4 +493,8 @@ function ArenaStats:ComputeSafeNumber(number)
         return "0"
     end
     return number
+end
+
+function ArenaStats:ShouldHideCharacterNamesTooltips()
+    return not self.db.profile.characterNamesOnHover.hide
 end
