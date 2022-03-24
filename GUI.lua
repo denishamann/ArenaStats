@@ -240,6 +240,23 @@ function ArenaStats:RefreshLayout()
                 return ArenaStats:SortClassTable(a, b)
             end)
 
+            local teamPlayerNames = {
+                row["teamPlayerName1"], row["teamPlayerName2"],
+                row["teamPlayerName3"], row["teamPlayerName4"],
+                row["teamPlayerName5"]
+            }
+            local enemyPlayerNames = {
+                row["enemyPlayerName1"], row["enemyPlayerName2"],
+                row["enemyPlayerName3"], row["enemyPlayerName4"],
+                row["enemyPlayerName5"]
+            }
+            button:SetScript("OnEnter", function(self)
+                ArenaStats:ShowTooltip(self, teamPlayerNames, enemyPlayerNames)
+            end)
+            button:SetScript("OnLeave", function()
+                ArenaStats:HideTooltip()
+            end)
+
             button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(
                                                        teamClasses[1]))
             button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(
@@ -376,6 +393,24 @@ function ArenaStats:GetShortMapName(id)
         return "E"
     end
 end
+
+function ArenaStats:ShowTooltip(owner, teamPlayerNames, enemyPlayerNames)
+    AceGUI.tooltip:SetOwner(owner, "ANCHOR_TOP")
+    AceGUI.tooltip:ClearLines()
+    AceGUI.tooltip:AddLine(L["Names"])
+    for i, name in ipairs(teamPlayerNames) do
+        AceGUI.tooltip:AddLine(name, 0, 1, 0)
+    end
+    AceGUI.tooltip:AddLine('---------------')
+    for i, name in ipairs(enemyPlayerNames) do
+        AceGUI.tooltip:AddLine(name, 1, 0, 0)
+    end
+    if (ArenaStats:ShouldHideCharacterNamesTooltips()) then
+        AceGUI.tooltip:Show()
+    end
+end
+
+function ArenaStats:HideTooltip() AceGUI.tooltip:Hide() end
 
 function ArenaStats:ExportFrame() return asGui.exportFrame end
 function ArenaStats:ExportEditBox() return asGui.exportEditBox end

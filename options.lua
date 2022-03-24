@@ -76,6 +76,28 @@ function ArenaStats:RegisterOptionsTable()
                                 set = 'ToggleMinimapButton'
                             }
                         }
+                    },
+                    group3 = {
+                        order = 30,
+                        type = "group",
+                        name = L["Interface Settings"],
+                        inline = true,
+                        args = {
+                            characterNamesOnHover = {
+                                order = 31,
+                                type = "toggle",
+                                name = L["Show character names on hover"],
+                                get = function()
+                                    return not self.db.profile
+                                               .characterNamesOnHover.hide
+                                end,
+                                set = function()
+                                    self.db.profile.characterNamesOnHover.hide =
+                                        not self.db.profile
+                                            .characterNamesOnHover.hide
+                                end
+                            }
+                        }
                     }
                 }
             },
