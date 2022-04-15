@@ -272,6 +272,13 @@ function ArenaStats:RefreshLayout()
                                           0 and "+" .. row["diffRating"] or
                                           row["diffRating"]) or "0") .. ")")
             button.Rating:SetTextColor(self:ColorForRating(row["diffRating"]))
+            if (row["teamColor"] ~= nil and row["winnerColor"] ~= nil) then
+                if (row["teamColor"] ~= row["winnerColor"] ) then
+                    button.Rating:SetTextColor(255, 0, 0, 1)
+                else
+                    button.Rating:SetTextColor(0, 255, 0, 1)
+                end
+            end
             button.MMR:SetText(row["mmr"] or "-")
 
             local enemyClasses = {
