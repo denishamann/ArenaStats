@@ -86,6 +86,8 @@ function ArenaStats:SetLastArenaRankingData()
         end
     end
 
+    self.current["stats"]["teamColor"] = playerTeam
+    
     for i = 0, 1 do
         local teamName, oldTeamRating, newTeamRating, teamMMR =
             GetBattlefieldTeamInfo(i)
@@ -168,6 +170,11 @@ function ArenaStats:UPDATE_BATTLEFIELD_SCORE()
         self.current["stats"]["zoneId"] = select(8, GetInstanceInfo())
         self.current["stats"]["endTime"] = _G.time()
         self.arenaEnded = true
+		if (battlefieldWinner == 0) then
+			self.current["stats"]["winnerColor"] = "GREEN";
+		elseif (battlefieldWinner == 1) then
+			self.current["stats"]["winnerColor"] = "GOLD";
+		end
         self:SetLastArenaRankingData()
         if GetNumBattlefieldScores() ~= 0 then self:RecordArena() end
     end
@@ -297,6 +304,8 @@ function ArenaStats:BuildTable()
             ["newTeamRating"] = row["newTeamRating"],
             ["diffRating"] = row["diffRating"],
             ["mmr"] = row["mmr"],
+            ["teamColor"] = row["teamColor"],
+            ["winnerColor"] = row["winnerColor"],
 
             -- Enemy team
 
@@ -363,7 +372,7 @@ end
 
 function ArenaStats:ExportCSV()
 
-    local csv = "isRanked,startTime,endTime,zoneId,duration,teamName," ..
+    local csv = "isRanked,startTime,endTime,zoneId,duration,teamName,teamColor,winnerColor," ..
                     "teamPlayerName1,teamPlayerName2,teamPlayerName3,teamPlayerName4,teamPlayerName5," ..
                     "teamPlayerClass1,teamPlayerClass2,teamPlayerClass3,teamPlayerClass4,teamPlayerClass5," ..
                     "teamPlayerRace1,teamPlayerRace2,teamPlayerRace3,teamPlayerRace4,teamPlayerRace5," ..
@@ -383,6 +392,8 @@ function ArenaStats:ExportCSV()
                       row["endTime"] - row["startTime"] or "") .. "," ..
 
                   (row["teamName"] ~= nil and row["teamName"] or "") .. "," ..
+                  (row["teamColor"] ~= nil and row["teamColor"] or "") .. "," ..
+                  (row["winnerColor"] ~= nil and row["winnerColor"] or "") .. "," ..
 
                   (row["teamCharName"] and row["teamCharName"][0] ~= nil and
                       row["teamCharName"][0] or "") .. "," ..
