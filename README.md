@@ -68,13 +68,13 @@ Responds to console with **/arenastats** and a minimap button.
 
 ### Common
 
-- Add a setting to disable the recording of skirmishes (suggested by @TheDonkeyPower)
-- Show who won a skirmish
+- ~~Add a setting to disable the recording of skirmishes (suggested by @TheDonkeyPower)~~ Done! (added filters on ranked/skirm)
+- ~~Show who won a skirmish~~ Done!
 - Detect spec
 
 ### In game gui:
-- Add tooltip on hover on class to display name/race
-- Filter on bracker type
+- ~~Add tooltip on hover on class to display name/race~~ Done!
+- ~~Filter on bracker type~~ Done!
 
 ### Csv:
 - Add csv column for bracket type
@@ -83,9 +83,9 @@ Responds to console with **/arenastats** and a minimap button.
 
 ## Known issues
 
-- If you quit the arena and there is still someone of your team alive, the arena won't be recorded (stay until the scoreboard shows or be quit only if you are the last one alive).
-- Sometimes player names are not recorded
-- Sometimes data is not correctly reset between games and there are ghost players added to the arena or timers are wrong
+- If you quit the arena and there is still someone of your team alive, the arena won't be recorded (stay until the scoreboard shows or quit only if you are the last one alive).
+- ~~Sometimes player names are not recorded~~ Fixed
+- ~~Sometimes data is not correctly reset between games and there are ghost players added to the arena or timers are wrong~~ Fixed
 - If a player gets disconnected at the end of the arena it records twice the arena match (reported by @Lilianos)
 
 
