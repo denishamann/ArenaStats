@@ -11,6 +11,7 @@
     <Include file="Libs\AceEvent-3.0\AceEvent-3.0.xml"/>
     <Include file="Libs\AceLocale-3.0\AceLocale-3.0.xml"/>
 
+    <Script file="Libs\LibDeflate\LibDeflate.lua"/>
     <Script file="Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
     <Script file="Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua"/>
     <Script file="Libs\LibRaces-1.0\LibRaces-1.0.lua"/>

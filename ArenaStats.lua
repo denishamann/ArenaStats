@@ -5,6 +5,7 @@ local ArenaStats = _G.LibStub("AceAddon-3.0"):NewAddon(addonName,
                                                        "AceEvent-3.0")
 local L = _G.LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 local libDBIcon = _G.LibStub("LibDBIcon-1.0")
+local LibDeflate = _G.LibStub("LibDeflate")
 local LibRaces = _G.LibStub("LibRaces-1.0")
 local LibDeflate = _G.LibStub("LibDeflate")
 local IsActiveBattlefieldArena = IsActiveBattlefieldArena
@@ -473,7 +474,8 @@ function ArenaStats:ExportCSV()
                       row["enemyRace"][4] or "") .. "," ..
                   (self:ComputeFaction(row["enemyFaction"])) .. "," .. "\n"
     end
-    ArenaStats:ExportFrame().eb:SetText(csv)
+    local compressed = LibDeflate:EncodeForPrint(csv)
+    ArenaStats:ExportFrame().eb:SetText(compressed)
     ArenaStats:ExportFrame():SetTitle(L["Export"])
     ArenaStats:ExportFrame().eb:SetNumLines(29)
     ArenaStats:ExportFrame().eb:SetLabel(
