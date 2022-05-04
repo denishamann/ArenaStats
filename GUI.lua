@@ -153,7 +153,7 @@ function ArenaStats:CreateGUI()
     asGui.exportFrame:Hide()
 
     asGui.exportEditBox = AceGUI:Create("MultiLineEditBox")
-    asGui.exportEditBox:SetLabel('ExportString')
+    asGui.exportEditBox:SetLabel('Export String')
     asGui.exportEditBox:SetNumLines(29)
     asGui.exportEditBox:SetText("")
     asGui.exportEditBox:SetWidth(500)
