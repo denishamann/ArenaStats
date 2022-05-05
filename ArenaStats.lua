@@ -5,8 +5,8 @@ local ArenaStats = _G.LibStub("AceAddon-3.0"):NewAddon(addonName,
                                                        "AceEvent-3.0")
 local L = _G.LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 local libDBIcon = _G.LibStub("LibDBIcon-1.0")
-local LibDeflate = _G.LibStub("LibDeflate")
 local LibRaces = _G.LibStub("LibRaces-1.0")
+local LibDeflate = _G.LibStub("LibDeflate")
 local IsActiveBattlefieldArena = IsActiveBattlefieldArena
 local GetBattlefieldStatus, GetBattlefieldTeamInfo, GetNumBattlefieldScores,
       GetBattlefieldScore, GetBattlefieldWinner, IsArenaSkirmish, IsInInstance,
@@ -87,7 +87,7 @@ function ArenaStats:SetLastArenaRankingData()
     end
 
     self.current["stats"]["teamColor"] = playerTeam
-    
+
     for i = 0, 1 do
         local teamName, oldTeamRating, newTeamRating, teamMMR =
             GetBattlefieldTeamInfo(i)
@@ -170,11 +170,11 @@ function ArenaStats:UPDATE_BATTLEFIELD_SCORE()
         self.current["stats"]["zoneId"] = select(8, GetInstanceInfo())
         self.current["stats"]["endTime"] = _G.time()
         self.arenaEnded = true
-		if (battlefieldWinner == 0) then
-			self.current["stats"]["winnerColor"] = "GREEN";
-		elseif (battlefieldWinner == 1) then
-			self.current["stats"]["winnerColor"] = "GOLD";
-		end
+        if (battlefieldWinner == 0) then
+            self.current["stats"]["winnerColor"] = "GREEN";
+        elseif (battlefieldWinner == 1) then
+            self.current["stats"]["winnerColor"] = "GOLD";
+        end
         self:SetLastArenaRankingData()
         if GetNumBattlefieldScores() ~= 0 then self:RecordArena() end
     end
@@ -372,16 +372,17 @@ end
 
 function ArenaStats:ExportCSV()
 
-    local csv = "isRanked,startTime,endTime,zoneId,duration,teamName,teamColor,winnerColor," ..
-                    "teamPlayerName1,teamPlayerName2,teamPlayerName3,teamPlayerName4,teamPlayerName5," ..
-                    "teamPlayerClass1,teamPlayerClass2,teamPlayerClass3,teamPlayerClass4,teamPlayerClass5," ..
-                    "teamPlayerRace1,teamPlayerRace2,teamPlayerRace3,teamPlayerRace4,teamPlayerRace5," ..
-                    "oldTeamRating,newTeamRating,diffRating,mmr," ..
-                    "enemyOldTeamRating,enemyNewTeamRating,enemyDiffRating,enemyMmr,enemyTeamName," ..
-                    "enemyPlayerName1,enemyPlayerName2,enemyPlayerName3,enemyPlayerName4,enemyPlayerName5," ..
-                    "enemyPlayerClass1,enemyPlayerClass2,enemyPlayerClass3,enemyPlayerClass4,enemyPlayerClass5," ..
-                    "enemyPlayerRace1,enemyPlayerRace2,enemyPlayerRace3,enemyPlayerRace4,enemyPlayerRace5,enemyFaction" ..
-                    "\n"
+    local csv =
+        "isRanked,startTime,endTime,zoneId,duration,teamName,teamColor,winnerColor," ..
+            "teamPlayerName1,teamPlayerName2,teamPlayerName3,teamPlayerName4,teamPlayerName5," ..
+            "teamPlayerClass1,teamPlayerClass2,teamPlayerClass3,teamPlayerClass4,teamPlayerClass5," ..
+            "teamPlayerRace1,teamPlayerRace2,teamPlayerRace3,teamPlayerRace4,teamPlayerRace5," ..
+            "oldTeamRating,newTeamRating,diffRating,mmr," ..
+            "enemyOldTeamRating,enemyNewTeamRating,enemyDiffRating,enemyMmr,enemyTeamName," ..
+            "enemyPlayerName1,enemyPlayerName2,enemyPlayerName3,enemyPlayerName4,enemyPlayerName5," ..
+            "enemyPlayerClass1,enemyPlayerClass2,enemyPlayerClass3,enemyPlayerClass4,enemyPlayerClass5," ..
+            "enemyPlayerRace1,enemyPlayerRace2,enemyPlayerRace3,enemyPlayerRace4,enemyPlayerRace5,enemyFaction" ..
+            "\n"
 
     for _, row in ipairs(self.db.char.history) do
         csv = csv .. (self:YesOrNo(row["isRanked"])) .. "," ..
@@ -393,7 +394,8 @@ function ArenaStats:ExportCSV()
 
                   (row["teamName"] ~= nil and row["teamName"] or "") .. "," ..
                   (row["teamColor"] ~= nil and row["teamColor"] or "") .. "," ..
-                  (row["winnerColor"] ~= nil and row["winnerColor"] or "") .. "," ..
+                  (row["winnerColor"] ~= nil and row["winnerColor"] or "") ..
+                  "," ..
 
                   (row["teamCharName"] and row["teamCharName"][0] ~= nil and
                       row["teamCharName"][0] or "") .. "," ..
@@ -473,6 +475,22 @@ function ArenaStats:ExportCSV()
     end
     local compressed = LibDeflate:EncodeForPrint(csv)
     ArenaStats:ExportFrame().eb:SetText(compressed)
+    ArenaStats:ExportFrame():SetTitle(L["Export"])
+    ArenaStats:ExportFrame().eb:SetNumLines(29)
+    ArenaStats:ExportFrame().eb:SetLabel(
+        "Export String " .. " (" .. string.len(compressed) .. ") ")
+    ArenaStats:ExportFrame():Show()
+    ArenaStats:ExportFrame().eb:SetFocus()
+    ArenaStats:ExportFrame().eb:HighlightText(0, ArenaStats:ExportFrame().eb
+                                                  .editBox:GetNumLetters())
+end
+
+function ArenaStats:WebsiteURL()
+    ArenaStats:ExportFrame():SetTitle(L["Tool"])
+    ArenaStats:ExportFrame().eb:SetLabel("Tool Website URL")
+    ArenaStats:ExportFrame().eb:SetNumLines(1)
+    ArenaStats:ExportFrame().eb:SetText(
+        "https://denishamann.github.io/arena-stats-tbc-visualizer/")
     ArenaStats:ExportFrame():Show()
     ArenaStats:ExportFrame().eb:SetFocus()
     ArenaStats:ExportFrame().eb:HighlightText(0, ArenaStats:ExportFrame().eb

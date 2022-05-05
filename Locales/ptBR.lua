@@ -65,6 +65,10 @@ L["Show minimap button"] = "Show minimap button"
 --[[Translation missing --]]
 L["Team"] = "Team"
 --[[Translation missing --]]
+L["Tool"] = "Tool"
+--[[Translation missing --]]
+L["Tool Website"] = "Tool Website"
+--[[Translation missing --]]
 L["to open the main window"] = "to open the main window"
 --[[Translation missing --]]
 L["to open options"] = "to open options"
