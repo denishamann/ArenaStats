@@ -473,12 +473,11 @@ function ArenaStats:ExportCSV()
                       row["enemyRace"][4] or "") .. "," ..
                   (self:ComputeFaction(row["enemyFaction"])) .. "," .. "\n"
     end
-    local compressed = LibDeflate:EncodeForPrint(csv)
-    ArenaStats:ExportFrame().eb:SetText(compressed)
+    ArenaStats:ExportFrame().eb:SetText(csv)
     ArenaStats:ExportFrame():SetTitle(L["Export"])
     ArenaStats:ExportFrame().eb:SetNumLines(29)
     ArenaStats:ExportFrame().eb:SetLabel(
-        "Export String " .. " (" .. string.len(compressed) .. ") ")
+        "Export String " .. " (" .. string.len(csv) .. ") ")
     ArenaStats:ExportFrame():Show()
     ArenaStats:ExportFrame().eb:SetFocus()
     ArenaStats:ExportFrame().eb:HighlightText(0, ArenaStats:ExportFrame().eb
