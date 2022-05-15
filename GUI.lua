@@ -81,6 +81,12 @@ function ArenaStats:CreateGUI()
     exportButton:SetCallback("OnClick", function() ArenaStats:ExportCSV() end)
     asGui.f:AddChild(exportButton)
 
+    local exportTool = AceGUI:Create("Button")
+    exportTool:SetWidth(120)
+    exportTool:SetText(string.format(" %s ", L["Tool Website"]))
+    exportTool:SetCallback("OnClick", function() ArenaStats:WebsiteURL() end)
+    asGui.f:AddChild(exportTool)
+
     local bracketSizeDropdown = AceGUI:Create("Dropdown")
     bracketSizeDropdown:SetWidth(80)
     bracketSizeDropdown:SetCallback("OnValueChanged", function(_, _, val)
@@ -153,7 +159,7 @@ function ArenaStats:CreateGUI()
     asGui.exportFrame:Hide()
 
     asGui.exportEditBox = AceGUI:Create("MultiLineEditBox")
-    asGui.exportEditBox:SetLabel('ExportString')
+    asGui.exportEditBox:SetLabel("Export String")
     asGui.exportEditBox:SetNumLines(29)
     asGui.exportEditBox:SetText("")
     asGui.exportEditBox:SetWidth(500)
@@ -273,7 +279,7 @@ function ArenaStats:RefreshLayout()
                                           row["diffRating"]) or "0") .. ")")
             button.Rating:SetTextColor(self:ColorForRating(row["diffRating"]))
             if (row["teamColor"] ~= nil and row["winnerColor"] ~= nil) then
-                if (row["teamColor"] ~= row["winnerColor"] ) then
+                if (row["teamColor"] ~= row["winnerColor"]) then
                     button.Rating:SetTextColor(255, 0, 0, 1)
                 else
                     button.Rating:SetTextColor(0, 255, 0, 1)
