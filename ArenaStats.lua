@@ -218,7 +218,7 @@ function ArenaStats:DrawMinimapIcon()
         end,
         OnTooltipShow = function(tooltip)
             tooltip:AddLine(string.format("%s |cff777777v%s|r", addonTitle,
-                                          "0.1.3"))
+                                          "0.1.5"))
             tooltip:AddLine(string.format("|cFFCFCFCF%s|r %s", L["Left Click"],
                                           L["to open the main window"]))
             tooltip:AddLine(string.format("|cFFCFCFCF%s|r %s", L["Right Click"],
