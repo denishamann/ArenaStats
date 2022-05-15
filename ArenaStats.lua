@@ -6,7 +6,6 @@ local ArenaStats = _G.LibStub("AceAddon-3.0"):NewAddon(addonName,
 local L = _G.LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 local libDBIcon = _G.LibStub("LibDBIcon-1.0")
 local LibRaces = _G.LibStub("LibRaces-1.0")
-local LibDeflate = _G.LibStub("LibDeflate")
 local IsActiveBattlefieldArena = IsActiveBattlefieldArena
 local GetBattlefieldStatus, GetBattlefieldTeamInfo, GetNumBattlefieldScores,
       GetBattlefieldScore, GetBattlefieldWinner, IsArenaSkirmish, IsInInstance,
