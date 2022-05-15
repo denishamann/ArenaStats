@@ -15,6 +15,11 @@ Responds to console with **/arenastats** and a minimap button.
 - Display summarised **arena history** in a table
 - Exportable data into **csv** format (which can easily be used for advanced statistics)
 
+## Visualizer
+
+You can paste your export string in the _[ArenaStatsTBC Visualizer](https://denishamann.github.io/arena-stats-tbc-visualizer/)_ tool.
+You can contribute to improve the visulizer tool _[here](https://github.com/denishamann/arena-stats-tbc-visualizer)_. 
+
 ## List of fields available at CSV export for each Arena match
 
 - isRanked
@@ -77,7 +82,7 @@ Responds to console with **/arenastats** and a minimap button.
 - ~~Filter on bracker type~~ Done!
 
 ### Csv:
-- Add csv column for bracket type
+- ~~Add csv column for bracket type~~ The _[ArenaStatsTBC Visualizer](https://denishamann.github.io/arena-stats-tbc-visualizer/)_ is now available!
 - Provide a csv sheet with prepared graphs in which we can paste our data
 
 
