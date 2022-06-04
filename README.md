@@ -1,7 +1,5 @@
 # ArenaStats - TBC
 
-## Screenshot
-
 ![mainview](https://user-images.githubusercontent.com/15311371/172021323-7586d64c-5d2d-4fcb-b2f8-375cf8e33f1f.png)
 
 **Classic BCC addon for arena history and statistics**
