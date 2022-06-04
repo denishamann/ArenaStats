@@ -1,5 +1,9 @@
 # ArenaStats - TBC
 
+## Screenshot
+
+![mainview](https://user-images.githubusercontent.com/15311371/172021323-7586d64c-5d2d-4fcb-b2f8-375cf8e33f1f.png)
+
 **Classic BCC addon for arena history and statistics**
 
 _[Report issues here](https://github.com/denishamann/ArenaStatsTBC/issues)._
@@ -7,7 +11,7 @@ _[Report issues here](https://github.com/denishamann/ArenaStatsTBC/issues)._
 ArenaStats - TBC tries to record every arena joined and compiles statistics.
 Heavily inspired by [Battlegrounds Historian TBC](https://www.curseforge.com/wow/addons/bghistorian-tbc), which doesn't seem to release arena support for now.
 
-Responds to console with **/arenastats** and a minimap button.
+Responds to console with **/arenastats** or **/as** and a minimap button.
 
 ## Features
 
@@ -19,55 +23,6 @@ Responds to console with **/arenastats** and a minimap button.
 
 You can paste your export string in the _[ArenaStatsTBC Visualizer](https://denishamann.github.io/arena-stats-tbc-visualizer/)_ tool.
 You can contribute to improve the visulizer tool _[here](https://github.com/denishamann/arena-stats-tbc-visualizer)_. 
-
-## List of fields available at CSV export for each Arena match
-
-- isRanked
-- startTime
-- endTime
-- zoneId
-- duration
-- teamName
-- teamPlayerName1
-- teamPlayerName2
-- teamPlayerName3
-- teamPlayerName4
-- teamPlayerName5
-- teamPlayerClass1
-- teamPlayerClass2
-- teamPlayerClass3
-- teamPlayerClass4
-- teamPlayerClass5
-- teamPlayerRace1
-- teamPlayerRace2
-- teamPlayerRace3
-- teamPlayerRace4
-- teamPlayerRace5
-- oldTeamRating
-- newTeamRating
-- diffRating
-- mmr
-- enemyOldTeamRating
-- enemyNewTeamRating
-- enemyDiffRating
-- enemyMmr
-- enemyTeamName
-- enemyPlayerName1
-- enemyPlayerName2
-- enemyPlayerName3
-- enemyPlayerName4
-- enemyPlayerName5
-- enemyPlayerClass1
-- enemyPlayerClass2
-- enemyPlayerClass3
-- enemyPlayerClass4
-- enemyPlayerClass5
-- enemyPlayerRace1
-- enemyPlayerRace2
-- enemyPlayerRace3
-- enemyPlayerRace4
-- enemyPlayerRace5
-- enemyFaction
 
 ## Todo
 
@@ -93,6 +48,8 @@ You can contribute to improve the visulizer tool _[here](https://github.com/deni
 - ~~Sometimes data is not correctly reset between games and there are ghost players added to the arena or timers are wrong~~ Fixed
 - If a player gets disconnected at the end of the arena it records twice the arena match (reported by @Lilianos)
 
+## List of fields available at CSV export for each Arena match
+isRanked, startTime, endTime, zoneId, duration, teamName, teamPlayerName1, teamPlayerName2, teamPlayerName3, teamPlayerName4, teamPlayerName5, teamPlayerClass1, teamPlayerClass2, teamPlayerClass3, teamPlayerClass4, teamPlayerClass5, teamPlayerRace1, teamPlayerRace2, teamPlayerRace3, teamPlayerRace4, teamPlayerRace5, oldTeamRating, newTeamRating, diffRating, mmr, enemyOldTeamRating, enemyNewTeamRating, enemyDiffRating, enemyMmr, enemyTeamName, enemyPlayerName1, enemyPlayerName2, enemyPlayerName3, enemyPlayerName4, enemyPlayerName5, enemyPlayerClass1, enemyPlayerClass2, enemyPlayerClass3, enemyPlayerClass4, enemyPlayerClass5, enemyPlayerRace1, enemyPlayerRace2, enemyPlayerRace3, enemyPlayerRace4, enemyPlayerRace5, enemyFaction
 
 ## Contribution
 
