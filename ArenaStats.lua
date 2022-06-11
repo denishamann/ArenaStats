@@ -479,8 +479,7 @@ function ArenaStats:ExportCSV()
         "Export String " .. " (" .. string.len(csv) .. ") ")
     ArenaStats:ExportFrame():Show()
     ArenaStats:ExportFrame().eb:SetFocus()
-    ArenaStats:ExportFrame().eb:HighlightText(0, ArenaStats:ExportFrame().eb
-                                                  .editBox:GetNumLetters())
+    ArenaStats:ExportFrame().eb:HighlightText()
 end
 
 function ArenaStats:WebsiteURL()
@@ -491,8 +490,7 @@ function ArenaStats:WebsiteURL()
         "https://denishamann.github.io/arena-stats-tbc-visualizer/")
     ArenaStats:ExportFrame():Show()
     ArenaStats:ExportFrame().eb:SetFocus()
-    ArenaStats:ExportFrame().eb:HighlightText(0, ArenaStats:ExportFrame().eb
-                                                  .editBox:GetNumLetters())
+    ArenaStats:ExportFrame().eb:HighlightText()
 end
 
 function ArenaStats:ComputeFaction(factionId)
