@@ -51,7 +51,9 @@ end
 ArenaStats.mapListShortName = {
     [559] = ArenaStats:CreateShortMapName(GetRealZoneText(559)),
     [562] = ArenaStats:CreateShortMapName(GetRealZoneText(562)),
-    [572] = ArenaStats:CreateShortMapName(GetRealZoneText(572))
+    [572] = ArenaStats:CreateShortMapName(GetRealZoneText(572)),
+    [617] = ArenaStats:CreateShortMapName(GetRealZoneText(617)),
+    [618] = ArenaStats:CreateShortMapName(GetRealZoneText(618))
 }
 
 function ArenaStats:CreateGUI()
@@ -371,6 +373,8 @@ function ArenaStats:ClassIconId(className)
         return 626000
     elseif className == "ROGUE" then
         return 626005
+    elseif className == "DEATHKNIGHT" then
+        return 135771
     end
 end
 
