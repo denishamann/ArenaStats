@@ -1,5 +1,5 @@
 local _G = _G
-local addonName = "ArenaStatsTBC"
+local addonName = "ArenaStats"
 local addonTitle = select(2, _G.GetAddOnInfo(addonName))
 local ArenaStats = _G.LibStub("AceAddon-3.0"):GetAddon(addonName)
 local L = _G.LibStub("AceLocale-3.0"):GetLocale(addonName, true)

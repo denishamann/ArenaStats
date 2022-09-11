@@ -1,4 +1,4 @@
-local addonName = "ArenaStatsTBC"
+local addonName = "ArenaStats"
 local addonTitle = select(2, _G.GetAddOnInfo(addonName))
 local ArenaStats = _G.LibStub("AceAddon-3.0"):NewAddon(addonName,
                                                        "AceConsole-3.0",
@@ -487,7 +487,7 @@ function ArenaStats:WebsiteURL()
     ArenaStats:ExportFrame().eb:SetLabel("Tool Website URL")
     ArenaStats:ExportFrame().eb:SetNumLines(1)
     ArenaStats:ExportFrame().eb:SetText(
-        "https://denishamann.github.io/arena-stats-tbc-visualizer/")
+        "https://denishamann.github.io/arena-stats-visualizer/")
     ArenaStats:ExportFrame():Show()
     ArenaStats:ExportFrame().eb:SetFocus()
     ArenaStats:ExportFrame().eb:HighlightText()

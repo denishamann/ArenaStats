@@ -1,12 +1,12 @@
-# ArenaStats - TBC
+# ArenaStats
 
 ![mainview](https://user-images.githubusercontent.com/15311371/172021323-7586d64c-5d2d-4fcb-b2f8-375cf8e33f1f.png)
 
 **Classic BCC addon for arena history and statistics**
 
-_[Report issues here](https://github.com/denishamann/ArenaStatsTBC/issues)._
+_[Report issues here](https://github.com/denishamann/ArenaStats/issues)._
 
-ArenaStats - TBC tries to record every arena joined and compiles statistics.
+ArenaStats tries to record every arena joined and compiles statistics.
 Heavily inspired by [Battlegrounds Historian TBC](https://www.curseforge.com/wow/addons/bghistorian-tbc), which doesn't seem to release arena support for now.
 
 Responds to console with **/arenastats** or **/as** and a minimap button.
@@ -19,8 +19,8 @@ Responds to console with **/arenastats** or **/as** and a minimap button.
 
 ## Visualizer
 
-You can paste your export string in the _[ArenaStatsTBC Visualizer](https://denishamann.github.io/arena-stats-tbc-visualizer/)_ tool.
-You can contribute to improve the visulizer tool _[here](https://github.com/denishamann/arena-stats-tbc-visualizer)_. 
+You can paste your export string in the _[ArenaStats Visualizer](https://denishamann.github.io/arena-stats-visualizer/)_ tool.
+You can contribute to improve the visulizer tool _[here](https://github.com/denishamann/arena-stats-visualizer)_. 
 
 ## Todo
 
@@ -35,7 +35,7 @@ You can contribute to improve the visulizer tool _[here](https://github.com/deni
 - ~~Filter on bracker type~~ Done!
 
 ### Csv:
-- ~~Add csv column for bracket type~~ The _[ArenaStatsTBC Visualizer](https://denishamann.github.io/arena-stats-tbc-visualizer/)_ is now available!
+- ~~Add csv column for bracket type~~ The _[ArenaStats Visualizer](https://denishamann.github.io/arena-stats-visualizer/)_ is now available!
 - Provide a csv sheet with prepared graphs in which we can paste our data
 
 
@@ -51,4 +51,4 @@ isRanked, startTime, endTime, zoneId, duration, teamName, teamPlayerName1, teamP
 
 ## Contribution
 
-You can help this project by adding [translations](https://www.curseforge.com/wow/addons/arenastats-tbc/localization) and [reporting issues](https://github.com/denishamann/ArenaStatsTBC/issues).
+You can help this project by adding [translations](https://www.curseforge.com/wow/addons/arenastats/localization) and [reporting issues](https://github.com/denishamann/ArenaStats/issues).

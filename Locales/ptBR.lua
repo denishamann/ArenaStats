@@ -1,4 +1,4 @@
-local L = LibStub("AceLocale-3.0"):NewLocale("ArenaStatsTBC", "ptBR")
+local L = LibStub("AceLocale-3.0"):NewLocale("ArenaStats", "ptBR")
 if not L then return end
 
 --[[Translation missing --]]

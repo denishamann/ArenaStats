@@ -1,5 +1,5 @@
-## Interface: 20504
-## Title: ArenaStats - TBC
+## Interface: 30400
+## Title: ArenaStats
 ## Notes: Arena history and statistics with csv export
 ## Author: Kallias-Sulfuron
 ## Version: 0.1.5
