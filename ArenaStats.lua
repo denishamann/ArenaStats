@@ -128,19 +128,32 @@ function ArenaStats:SetLastArenaRankingData()
     -- playerName, killingBlows, honorKills, deaths, honorGained, faction, rank, race, class, classToken, damageDone, healingDone
     for i = 1, #playerTeamTable do
         local row = playerTeamTable[i]
-        local race = LibRaces:GetRaceToken(row[8]):upper()
+        local race = LibRaces:GetRaceToken(row[8])
+        local raceUpper
+        if race == nil then
+            raceUpper = ''
+        else
+            raceUpper = race:upper()
+        end
         self.current["stats"]["teamClass"][i - 1] = row[10]:upper()
         self.current["stats"]["teamCharName"][i - 1] = row[1]
-        self.current["stats"]["teamRace"][i - 1] = race
+        self.current["stats"]["teamRace"][i - 1] = raceUpper
     end
 
     for i = 1, #enemyTeamTable do
         local row = enemyTeamTable[i]
-        local race = LibRaces:GetRaceToken(row[8]):upper()
+
+        local race = LibRaces:GetRaceToken(row[8])
+        local raceUpper
+        if race == nil then
+            raceUpper = ''
+        else
+            raceUpper = race:upper()
+        end
         self.current["stats"]["enemyClass"][i - 1] = row[10]:upper()
         self.current["stats"]["enemyName"][i - 1] = row[1]
         self.current["stats"]["enemyRace"][i - 1] = race
-        self.current["stats"]["enemyFaction"] = self:RaceToFaction(race)
+        self.current["stats"]["enemyFaction"] = self:RaceToFaction(raceUpper)
     end
 end
 
