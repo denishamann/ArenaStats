@@ -2,7 +2,7 @@
 ## Title: ArenaStats
 ## Notes: Arena history and statistics with csv export
 ## Author: Kallias-Sulfuron
-## Version: 0.2.1
+## Version: 0.2.2
 ## SavedVariables: ArenaStats
 
 embeds.xml
