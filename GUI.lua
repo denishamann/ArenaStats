@@ -194,8 +194,8 @@ function ArenaStats:OnArenaTypeChange(key)
     self:UpdateTableView()
 end
 
-function ArenaStats:OnFilterNameChange(txt)
-    filters.name = txt
+function ArenaStats:OnFilterNameChange(text)
+    filters.name = text
     self:SortTable()
     self:UpdateTableView()
 end
@@ -217,9 +217,9 @@ function ArenaStats:EnemyNameFilterRow(row)
     end
     for category, val in pairs(row) do
         -- find player names within the row
-        if type(val) == "string" and category:sub(1, #"enemyPlayerName") == "enemyPlayerName" then
+        if (type(val) == "string" and category:sub(1, #"enemyPlayerName") == "enemyPlayerName") then
             -- if the filter.name value is anywhere within a substring of the player names
-            if string.find(val:lower(), filters.name:lower(), 1, true) then
+            if (string.find(val:lower(), filters.name:lower(), 1, true)) then
                 return false
             end
         end
@@ -235,7 +235,7 @@ function ArenaStats:FilterRow(row)
         return true
     end
     if (self:EnemyNameFilterRow(row)) then
-        return true;
+        return true
     end
     return false
 end
