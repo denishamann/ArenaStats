@@ -118,7 +118,7 @@ function ArenaStats:CreateGUI()
     asGui.f:AddChild(arenaTypeDropdown)
 
     local nameFilter = AceGUI:Create("EditBox")
-    nameFilter:SetLabel("Filter By Name")
+    nameFilter:SetLabel(L["Filter By Name"])
     nameFilter:SetWidth(150)
     nameFilter:SetCallback("OnEnterPressed", function(widget, event, text)
         self:OnFilterNameChange(text)

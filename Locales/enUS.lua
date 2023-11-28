@@ -38,3 +38,4 @@ L["to open the main window"] = true
 L["to open options"] = true
 L["to move this button"] = true
 L["Toggle"] = true
+L["Filter By Name"] = true
