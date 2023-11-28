@@ -76,3 +76,5 @@ L["to open options"] = "to open options"
 L["to move this button"] = "to move this button"
 --[[Translation missing --]]
 L["Toggle"] = "Toggle"
+--[[Translation missing --]]
+L["Filter By Name"] = "Filter By Name"

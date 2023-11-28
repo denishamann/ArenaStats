@@ -64,6 +64,7 @@ function ArenaStats:CreateGUI()
 
     filters.bracket = 0
     filters.arenaType = 0
+    filters.name = ""
 
     asGui.f = AceGUI:Create("Frame")
     asGui.f:Hide()
@@ -115,6 +116,14 @@ function ArenaStats:CreateGUI()
     })
     arenaTypeDropdown:SetValue(filters.arenaType)
     asGui.f:AddChild(arenaTypeDropdown)
+
+    local nameFilter = AceGUI:Create("EditBox")
+    nameFilter:SetLabel(L["Filter By Name"])
+    nameFilter:SetWidth(150)
+    nameFilter:SetCallback("OnEnterPressed", function(widget, event, text)
+        self:OnFilterNameChange(text)
+    end)
+    asGui.f:AddChild(nameFilter)
 
     -- TABLE HEADER
     local tableHeader = AceGUI:Create("SimpleGroup")
@@ -185,6 +194,12 @@ function ArenaStats:OnArenaTypeChange(key)
     self:UpdateTableView()
 end
 
+function ArenaStats:OnFilterNameChange(text)
+    filters.name = text
+    self:SortTable()
+    self:UpdateTableView()
+end
+
 function ArenaStats:CreateScoreButton(tableHeader, width, localeStr)
     local btn = AceGUI:Create("Label")
     btn:SetWidth(width)
@@ -196,11 +211,30 @@ function ArenaStats:CreateScoreButton(tableHeader, width, localeStr)
     tableHeader:AddChild(margin)
 end
 
+function ArenaStats:EnemyNameFilterRow(row)
+    if filters.name == "" then
+        return false
+    end
+    for category, val in pairs(row) do
+        -- find player names within the row
+        if (type(val) == "string" and category:sub(1, #"enemyPlayerName") == "enemyPlayerName") then
+            -- if the filter.name value is anywhere within a substring of the player names
+            if (string.find(val:lower(), filters.name:lower(), 1, true)) then
+                return false
+            end
+        end
+    end
+    return true
+end
+
 function ArenaStats:FilterRow(row)
     if (filters.bracket ~= 0 and row["teamSize"] ~= filters.bracket) then
         return true
     end
     if (filters.arenaType ~= 0 and row["isRanked"] ~= filters.arenaType) then
+        return true
+    end
+    if (self:EnemyNameFilterRow(row)) then
         return true
     end
     return false
