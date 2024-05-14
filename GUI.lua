@@ -248,13 +248,34 @@ function ArenaStats:SortTable()
     end
 end
 
-function ArenaStats:SortClassTable(a, b)
-    -- regular sort, pushes nils to end
-    if (not a or not b) then
+
+
+
+function ArenaStats:SortClassSpecTable(a, b)
+    -- Sort nils to the end of the list
+    -- Healer specs pushed to the end (before nils)
+    -- If no spec then sort by class as before
+    if not a or not b then
         return not b
-    else
-        return a < b
     end
+    if not a.class or not b.class then
+        return not b.class
+    end
+    if not a.spec or not b.spec then
+        return a.class < b.class
+    end
+    if self:IsHealerSpec(a.spec) and not self:IsHealerSpec(b.spec) then
+        return false
+    end
+    if not self:IsHealerSpec(a.spec) and self:IsHealerSpec(b.spec) then
+        return true
+    end
+    
+    return a.class < b.class
+end
+
+function ArenaStats:IsHealerSpec(spec) 
+    return spec == "Restoration" or spec == "Discipline" or spec == "Holy"
 end
 
 function ArenaStats:RefreshLayout()
@@ -278,8 +299,23 @@ function ArenaStats:RefreshLayout()
                 row["teamPlayerClass3"], row["teamPlayerClass4"],
                 row["teamPlayerClass5"]
             }
-            table.sort(teamClasses, function(a, b)
-                return ArenaStats:SortClassTable(a, b)
+
+            local teamSpecs = {
+                row["teamPlayerSpec1"], row["teamPlayerSpec2"],
+                row["teamPlayerSpec3"], row["teamPlayerSpec4"],
+                row["teamPlayerSpec5"]
+            }
+
+            local teamClassSpec = {
+                { class = teamClasses[1], spec = teamSpecs[1] },
+                { class = teamClasses[2], spec = teamSpecs[2] },
+                { class = teamClasses[3], spec = teamSpecs[3] },
+                { class = teamClasses[4], spec = teamSpecs[4] },
+                { class = teamClasses[5], spec = teamSpecs[5] }
+            }
+
+            table.sort(teamClassSpec, function(a, b)
+                return self:SortClassSpecTable(a, b)
             end)
 
             local teamPlayerNames = {
@@ -299,21 +335,19 @@ function ArenaStats:RefreshLayout()
                 ArenaStats:HideTooltip()
             end)
 
-            button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(
-                                                       teamClasses[1]))
-            button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(
-                                                       teamClasses[2]))
-            button.IconTeamPlayerClass3:SetTexture(self:ClassIconId(
-                                                       teamClasses[3]))
-            button.IconTeamPlayerClass4:SetTexture(self:ClassIconId(
-                                                       teamClasses[4]))
-            button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(
-                                                       teamClasses[5]))
+            button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(teamClassSpec[1]))
+            button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(teamClassSpec[2]))
+            button.IconTeamPlayerClass3:SetTexture(self:ClassIconId(teamClassSpec[3]))
+            button.IconTeamPlayerClass4:SetTexture(self:ClassIconId(teamClassSpec[4]))
+            button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(teamClassSpec[5]))
+
             button.Rating:SetText((row["newTeamRating"] or "-") .. " (" ..
                                       ((row["diffRating"] and row["diffRating"] >
                                           0 and "+" .. row["diffRating"] or
                                           row["diffRating"]) or "0") .. ")")
+
             button.Rating:SetTextColor(self:ColorForRating(row["diffRating"]))
+
             if (row["teamColor"] ~= nil and row["winnerColor"] ~= nil) then
                 if (row["teamColor"] ~= row["winnerColor"]) then
                     button.Rating:SetTextColor(255, 0, 0, 1)
@@ -328,16 +362,33 @@ function ArenaStats:RefreshLayout()
                 row["enemyPlayerClass3"], row["enemyPlayerClass4"],
                 row["enemyPlayerClass5"]
             }
-            table.sort(enemyClasses, function(a, b)
-                return ArenaStats:SortClassTable(a, b)
+
+            local enemySpecs = {
+                row["enemyPlayerSpec1"], row["enemyPlayerSpec2"],
+                row["enemyPlayerSpec3"], row["enemyPlayerSpec4"],
+                row["enemyPlayerSpec5"]
+            }
+
+            local enemyClassSpec = {
+                { class = enemyClasses[1], spec = enemySpecs[1] },
+                { class = enemyClasses[2], spec = enemySpecs[2] },
+                { class = enemyClasses[3], spec = enemySpecs[3] },
+                { class = enemyClasses[4], spec = enemySpecs[4] },
+                { class = enemyClasses[5], spec = enemySpecs[5] }
+            }
+
+            table.sort(enemyClassSpec, function(a, b)
+                return self:SortClassSpecTable(a, b)
             end)
 
-            button.IconEnemyPlayer1:SetTexture(self:ClassIconId(enemyClasses[1]))
-            button.IconEnemyPlayer2:SetTexture(self:ClassIconId(enemyClasses[2]))
-            button.IconEnemyPlayer3:SetTexture(self:ClassIconId(enemyClasses[3]))
-            button.IconEnemyPlayer4:SetTexture(self:ClassIconId(enemyClasses[4]))
-            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(enemyClasses[5]))
+            button.IconEnemyPlayer1:SetTexture(self:ClassIconId(enemyClassSpec[1]))
+            button.IconEnemyPlayer2:SetTexture(self:ClassIconId(enemyClassSpec[2]))
+            button.IconEnemyPlayer3:SetTexture(self:ClassIconId(enemyClassSpec[3]))
+            button.IconEnemyPlayer4:SetTexture(self:ClassIconId(enemyClassSpec[4]))
+            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(enemyClassSpec[5]))
+
             button.EnemyMMR:SetText(row["enemyMmr"] or "-")
+
             button.EnemyFaction:SetTexture(self:FactionIconId(
                                                row["enemyFaction"]))
 
@@ -385,35 +436,136 @@ function ArenaStats:HumanDuration(seconds)
     return string.format(L["%ih %im"], hours, (minutes - hours * 60))
 end
 
-function ArenaStats:ClassIconId(className)
+function ArenaStats:ClassIconId(classSpec)
+    if not classSpec then
+        return 0
+    end
 
-    if not className then return 0 end
+    local spec = classSpec.spec
+    local className = classSpec.class
+
+    if self.db.profile.showSpec.hide then
+        spec = "" 
+    end
+
+    if not spec then
+        spec = ""
+    end
 
     if className == "MAGE" then
+        if spec == "Frost" then
+            return 135846
+        end
+        if spec == "Fire" then
+            return 135809
+        end
+        if spec == "Arcane" then
+            return 135932
+        end
         return 626001
     elseif className == "PRIEST" then
+        if spec == "Shadow" then
+            return 136207
+        end
+        if spec == "Holy" then
+            return 237542
+        end
+        if spec == "Discipline" then
+            return 135940
+        end
         return 626004
     elseif className == "DRUID" then
+        if spec == "Restoration" then
+            return 136041
+        end
+        if spec == "Feral" then
+            return 136112
+        end
+        if spec == "Balance" then
+            return 136096
+        end
         return 625999
     elseif className == "SHAMAN" then
+        if spec == "Restoration" then
+            return 136052
+        end
+        if spec == "Elemental" then
+            return 136048
+        end
+        if spec == "Enhancement" then
+            return 136051
+        end
         return 626006
     elseif className == "PALADIN" then
+        if spec == "Retribution" then
+            return 135873
+        end
+        if spec == "Holy" then
+            return 135920
+        end
+        if spec == "Protection" then
+            return 236264
+        end
         return 626003
     elseif className == "WARLOCK" then
+        if spec == "Affliction" then
+            return 136145
+        end
+        if spec == "Demonology" then
+            return 136172
+        end
+        if spec == "Destruction" then
+            return 136186
+        end
         return 626007
     elseif className == "WARRIOR" then
+        if spec == "Arms" then
+            return 132355
+        end
+        if spec == "Fury" then
+            return 132347
+        end
+        if spec == "Protection" then
+            return 132341
+        end
         return 626008
     elseif className == "HUNTER" then
+        if spec == "BeastMastery" then
+            return 461112
+        end
+        if spec == "Marksmanship" then
+            return 236179
+        end
+        if spec == "Survival" then
+            return 461113
+        end
         return 626000
     elseif className == "ROGUE" then
+        if spec == "Assassination" then
+            return 132292
+        end
+        if spec == "Combat" then
+            return 132090
+        end
+        if spec == "Subtlety" then
+            return 132320
+        end
         return 626005
     elseif className == "DEATHKNIGHT" then
+        if spec == "Frost" then
+            return 135773
+        end
+        if spec == "Unholy" then
+            return 135775
+        end
+        if spec == "Blood" then
+            return 135770
+        end
         return 135771
     end
 end
 
 function ArenaStats:FactionIconId(factionId)
-
     if not factionId then return 0 end
 
     if factionId == 0 then
@@ -424,7 +576,6 @@ function ArenaStats:FactionIconId(factionId)
 end
 
 function ArenaStats:ColorForRating(rating)
-
     if not rating or rating == 0 then return 255, 255, 255, 1 end
 
     if rating < 0 then
@@ -464,4 +615,5 @@ end
 function ArenaStats:HideTooltip() AceGUI.tooltip:Hide() end
 
 function ArenaStats:ExportFrame() return asGui.exportFrame end
+
 function ArenaStats:ExportEditBox() return asGui.exportEditBox end
