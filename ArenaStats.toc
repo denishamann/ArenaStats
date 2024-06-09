@@ -1,8 +1,8 @@
-## Interface: 30400
+## Interface: 40400
 ## Title: ArenaStats
 ## Notes: Arena history and statistics with csv export
 ## Author: Kallias-Sulfuron
-## Version: 0.2.3
+## Version: 0.2.4
 ## SavedVariables: ArenaStats
 
 embeds.xml
@@ -12,3 +12,4 @@ ArenaStats.lua
 GUI.lua
 HybridScrollFrame.xml
 options.lua
+Constants_Cata.lua

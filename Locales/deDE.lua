@@ -78,3 +78,7 @@ L["to move this button"] = "to move this button"
 L["Toggle"] = "Toggle"
 --[[Translation missing --]]
 L["Filter By Name"] = "Filter By Name"
+--[[Translation missing --]]
+L["Show specialization"] = "Hide specialization"
+--[[Translation missing --]]
+L["Spec Detection"] = "Spec Detection"

@@ -25,7 +25,7 @@ function ArenaStats:RegisterOptionsTable()
                 type = "group",
                 name = L["Options"],
                 args = {
-                    intro = {order = 0, type = "description", name = addonNotes},
+                    intro = { order = 0, type = "description", name = addonNotes },
                     group1 = {
                         order = 10,
                         type = "group",
@@ -89,12 +89,32 @@ function ArenaStats:RegisterOptionsTable()
                                 name = L["Show character names on hover"],
                                 get = function()
                                     return not self.db.profile
-                                               .characterNamesOnHover.hide
+                                        .characterNamesOnHover.hide
                                 end,
                                 set = function()
                                     self.db.profile.characterNamesOnHover.hide =
                                         not self.db.profile
-                                            .characterNamesOnHover.hide
+                                        .characterNamesOnHover.hide
+                                end
+                            }
+                        }
+                    },
+                    group4 = {
+                        order = 40,
+                        type = "group",
+                        name = L["Spec Detection"],
+                        inline = true,
+                        args = {
+                            showSpec = {
+                                order = 41,
+                                type = "toggle",
+                                name = L["Show specialization"],
+                                get = function()
+                                    return not self.db.profile.showSpec.hide
+                                end,
+                                set = function()
+                                    self.db.profile.showSpec.hide =
+                                        not self.db.profile.showSpec.hide
                                 end
                             }
                         }
@@ -103,9 +123,9 @@ function ArenaStats:RegisterOptionsTable()
             },
             Profiles = AceDBOptions:GetOptionsTable(ArenaStats.db)
         }
-    }, {"arenastats", "as"})
+    }, { "arenastats", "as" })
     AceConfigDialog:AddToBlizOptions(addonName, nil, nil, "General")
 
     AceConfigDialog:AddToBlizOptions(addonName, "Profiles", addonName,
-                                     "Profiles")
+        "Profiles")
 end

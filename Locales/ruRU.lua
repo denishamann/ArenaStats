@@ -76,3 +76,7 @@ L["to open options"] = "to open options"
 L["to move this button"] = "to move this button"
 --[[Translation missing --]]
 L["Toggle"] = "Toggle"
+--[[Translation missing --]]
+L["Show specialization"] = "Hide specialization"
+--[[Translation missing --]]
+L["Spec Detection"] = "Spec Detection"

@@ -39,3 +39,5 @@ L["to open options"] = true
 L["to move this button"] = true
 L["Toggle"] = true
 L["Filter By Name"] = true
+L["Show specialization"] = true
+L["Spec Detection"] = true
