@@ -377,9 +377,19 @@ function ArenaStats:RefreshLayout()
                 { class = enemyClasses[5], spec = enemySpecs[5] }
             }
 
-            table.sort(enemyClassSpec, function(a, b)
-                return self:SortClassSpecTable(a, b)
-            end)
+            -- don't sort if match ends immediately due to no enemies (otherwise gui crashes)
+            local enemiesExist = false
+            for _, v in pairs(enemyClassSpec) do
+                if v.class or v.spec then
+                    enemiesExist = true
+                end
+            end
+
+            if enemiesExist then
+                table.sort(enemyClassSpec, function(a, b)
+                    return self:SortClassSpecTable(a, b)
+                end)
+            end
 
             button.IconEnemyPlayer1:SetTexture(self:ClassIconId(enemyClassSpec[1]))
             button.IconEnemyPlayer2:SetTexture(self:ClassIconId(enemyClassSpec[2]))
