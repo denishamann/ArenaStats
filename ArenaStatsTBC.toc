@@ -1,0 +1,14 @@
+## Interface: 20505
+## Title: ArenaStats - TBC
+## Notes: Arena history and statistics with csv export
+## Author: Kallias-Sulfuron
+## Version: 0.1.6
+## SavedVariables: ArenaStatsTBC
+
+embeds.xml
+locales.xml
+
+ArenaStats.lua
+GUI.lua
+HybridScrollFrame.xml
+options.lua
