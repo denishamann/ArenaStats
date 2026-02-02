@@ -1,5 +1,5 @@
 local addonName = "ArenaStats"
-local addonTitle = select(2, C_AddOns.GetAddOnInfo(addonName))
+local addonTitle = select(2, (C_AddOns and C_AddOns.GetAddOnInfo or GetAddOnInfo)(addonName))
 local ArenaStats = _G.LibStub("AceAddon-3.0"):NewAddon(addonName,
                                                        "AceConsole-3.0",
                                                        "AceEvent-3.0")
@@ -19,10 +19,10 @@ local UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer =
 function ArenaStats:OnInitialize()
     self.db = _G.LibStub("AceDB-3.0"):New(addonName, {
         profile = {
-            minimapButton = {hide = false},
+            minimapButton = {hide = false}, -- Note: LibDBIcon requires this format
             maxHistory = 0,
-            characterNamesOnHover = {hide = false},
-            showSpec = { hide = false }
+            showCharacterNamesOnHover = true,
+            showSpec = true
         },
         char = {history = {}}
     })
@@ -46,7 +46,19 @@ function ArenaStats:OnInitialize()
     self.specTable = {}
     self.arenaEnded = false
     self.current = { status = "none", stats = {}, units = {} }
+    
+    -- Cache for BuildTable to avoid rebuilding on every GUI refresh
+    self.tableCache = nil
+    self.tableCacheSize = 0
+    
     self:Reset()
+end
+
+function ArenaStats:OnDisable()
+    self:UnregisterAllEvents()
+    if _G.AsFrame then
+        _G.AsFrame:Hide()
+    end
 end
 
 function ArenaStats:OnSpecDetected(unitName, spec)
@@ -60,73 +72,79 @@ function ArenaStats:OnSpecDetected(unitName, spec)
 end
 
 function ArenaStats:ScanUnitBuffs(unit)
+    if not unit then return end
+
     for n = 1, 30 do
-        local auraData = C_UnitAuras.GetAuraDataByIndex(unit, n, "HELPFUL")
+        local name, spellID, unitCaster = self:GetUnitBuff(unit, n)
 
-        if (not auraData) then
+        if not name then
             break
         end
 
-        if (not auraData.name) then
-            break
-        end
-
-        local spellID = auraData.spellId
-        local unitCaster = auraData.sourceUnit
-
-        if self.specSpells[spellID] and unitCaster then -- Check for auras that detect a spec
-            local unitPet = string.gsub(unit, "%d$", "pet%1")
-            if UnitIsUnit(unit, unitCaster) or UnitIsUnit(unitPet, unitCaster) then
-                self:OnSpecDetected(GetUnitName(unitCaster, true), self.specSpells[spellID])
+        if self.specSpells[spellID] then
+            -- For TBC, we can't reliably get unitCaster, so we assume self-buffs
+            if self.isTBC then
+                local casterName = GetUnitName(unit, true)
+                if casterName then
+                    self:OnSpecDetected(casterName, self.specSpells[spellID])
+                end
+            elseif unitCaster then
+                local unitPet = string.gsub(unit, "%d$", "pet%1")
+                if UnitIsUnit(unit, unitCaster) or UnitIsUnit(unitPet, unitCaster) then
+                    local casterName = GetUnitName(unitCaster, true)
+                    if casterName then
+                        self:OnSpecDetected(casterName, self.specSpells[spellID])
+                    end
+                end
             end
         end
     end
 end
 
-function ArenaStats:ARENA_OPPONENT_UPDATE(unit, updateReason)
+function ArenaStats:ARENA_OPPONENT_UPDATE(_, unit, updateReason)
     self:ScanUnitBuffs(unit)
 end
 
-function ArenaStats:UNIT_AURA(unit, isFullUpdate, updatedAuras)
-    ArenaStats:ScanUnitBuffs(unit)
+function ArenaStats:UNIT_AURA(_, unit, isFullUpdate, updatedAuras)
+    self:ScanUnitBuffs(unit)
 end
 
-function ArenaStats:UNIT_SPELLCAST_START(event, unit, castGUID)
-    local spellName, _, _, _, _, _, _, _, spellID = CastingInfo(event)
+function ArenaStats:UNIT_SPELLCAST_START(_, unit, castGUID, spellID)
+    local spellName = spellID and GetSpellInfo(spellID) or nil
 
-    if event then
-        ArenaStats:ScanUnitBuffs(unit)
+    if unit then
+        self:ScanUnitBuffs(unit)
     end
 
-    if spellName then
-        if self.specSpells[spellID] and event then
-            local name = GetUnitName(unit, true)
+    if spellID and self.specSpells[spellID] and unit then
+        local name = GetUnitName(unit, true)
+        if name then
             self:OnSpecDetected(name, self.specSpells[spellID])
         end
     end
 end
 
-function ArenaStats:UNIT_SPELLCAST_CHANNEL_START(event, unit, castGuid, spellId)
-    if unit then 
-        ArenaStats:ScanUnitBuffs(unit)
+function ArenaStats:UNIT_SPELLCAST_CHANNEL_START(_, unit, castGuid, spellId)
+    if unit then
+        self:ScanUnitBuffs(unit)
     end
 
-    if spellId then
-        if self.specSpells[spellId] and unit then
-            local name = GetUnitName(unit, true)
+    if spellId and self.specSpells[spellId] and unit then
+        local name = GetUnitName(unit, true)
+        if name then
             self:OnSpecDetected(name, self.specSpells[spellId])
         end
     end
 end
 
-function ArenaStats:UNIT_SPELLCAST_SUCCEEDED(event, unit, castGuid, spellId)
+function ArenaStats:UNIT_SPELLCAST_SUCCEEDED(_, unit, castGuid, spellId)
     if unit then
-        ArenaStats:ScanUnitBuffs(unit)
+        self:ScanUnitBuffs(unit)
     end
 
-    if spellId then
-        if self.specSpells[spellId] and unit then
-            local name = GetUnitName(unit, true)
+    if spellId and self.specSpells[spellId] and unit then
+        local name = GetUnitName(unit, true)
+        if name then
             self:OnSpecDetected(name, self.specSpells[spellId])
         end
     end
@@ -169,6 +187,16 @@ function ArenaStats:GetSpecOrDefault(unitName)
     return "Unknown"
 end
 
+--- Collects and stores all arena ranking data at the end of a match.
+--- This function is called when the battlefield score is updated and a winner is determined.
+---
+--- The function performs three main tasks:
+--- 1. Identifies which team (GREEN=0 or GOLD=1) the player belongs to by scanning scores
+--- 2. Retrieves team ratings and MMR for both teams from GetBattlefieldTeamInfo
+--- 3. Collects individual player data (class, name, race, spec) for both teams
+---
+--- Data is stored in self.current["stats"] with 0-based indexing for player arrays
+--- to maintain compatibility with the existing data format.
 function ArenaStats:SetLastArenaRankingData()
     local playerTeam = ''
     local greenTeam = {}
@@ -176,17 +204,18 @@ function ArenaStats:SetLastArenaRankingData()
     local myName = UnitName("player")
     local numScores = GetNumBattlefieldScores()
 
+    -- Step 1: Scan all players to determine which team we're on and group players by team
+    -- GREEN team has teamIndex=0, GOLD team has teamIndex=1
     for i = 1, numScores do
         local data = { GetBattlefieldScore(i) }
         local teamIndex = data[6]
+        
+        -- Check if this player is us to determine our team color
         if data[1] == myName then
-            if teamIndex == 0 then
-                playerTeam = 'GREEN'
-            else
-                playerTeam = 'GOLD'
-            end
+            playerTeam = (teamIndex == 0) and 'GREEN' or 'GOLD'
         end
 
+        -- Group players into their respective teams
         if teamIndex == 0 then
             table.insert(greenTeam, data)
         else
@@ -196,29 +225,31 @@ function ArenaStats:SetLastArenaRankingData()
 
     self.current["stats"]["teamColor"] = playerTeam
 
+    -- Step 2: Get team ratings and MMR from both teams
+    -- Team index 0 = GREEN, Team index 1 = GOLD
     for i = 0, 1 do
         local teamName, oldTeamRating, newTeamRating, teamMMR =
             GetBattlefieldTeamInfo(i)
         if teamMMR > 0 then
-            if ((i == 0 and playerTeam == 'GREEN') or
-                    (i == 1 and playerTeam == 'GOLD')) then
+            local isPlayerTeam = (i == 0 and playerTeam == 'GREEN') or
+                                 (i == 1 and playerTeam == 'GOLD')
+            if isPlayerTeam then
                 self.current["stats"]["teamName"] = teamName
                 self.current["stats"]["oldTeamRating"] = oldTeamRating
                 self.current["stats"]["newTeamRating"] = newTeamRating
-                self.current["stats"]["diffRating"] = newTeamRating -
-                    oldTeamRating
+                self.current["stats"]["diffRating"] = newTeamRating - oldTeamRating
                 self.current["stats"]["mmr"] = teamMMR
             else
                 self.current["stats"]["enemyTeamName"] = teamName
                 self.current["stats"]["enemyOldTeamRating"] = oldTeamRating
                 self.current["stats"]["enemyNewTeamRating"] = newTeamRating
-                self.current["stats"]["enemyDiffRating"] = newTeamRating -
-                    oldTeamRating
+                self.current["stats"]["enemyDiffRating"] = newTeamRating - oldTeamRating
                 self.current["stats"]["enemyMmr"] = teamMMR
             end
         end
     end
 
+    -- Step 3: Initialize player data arrays and collect individual player info
     self.current["stats"]["teamClass"] = {}
     self.current["stats"]["teamCharName"] = {}
     self.current["stats"]["teamRace"] = {}
@@ -229,74 +260,55 @@ function ArenaStats:SetLastArenaRankingData()
     self.current["stats"]["enemyRace"] = {}
     self.current["stats"]["enemySpec"] = {}
 
-    local playerTeamTable = goldTeam
-    local enemyTeamTable = greenTeam
-    if (playerTeam == 'GREEN') then
-        playerTeamTable = greenTeam
-        enemyTeamTable = goldTeam
+    -- Determine which raw data table corresponds to player's team vs enemy team
+    local playerTeamTable = (playerTeam == 'GREEN') and greenTeam or goldTeam
+    local enemyTeamTable = (playerTeam == 'GREEN') and goldTeam or greenTeam
+
+    -- Helper to convert localized race name to uppercase race token
+    local function convertRace(raceInput)
+        if not raceInput then return '' end
+        local race = LibRaces:GetRaceToken(raceInput)
+        return race and race:upper() or ''
     end
 
-    -- playerName, killingBlows, honorKills, deaths, honorGained, faction, rank, race, class, classToken, damageDone, healingDone
+    -- GetBattlefieldScore returns:
+    -- [1]=playerName, [2]=killingBlows, [3]=honorKills, [4]=deaths, [5]=honorGained,
+    -- [6]=faction, [7]=rank, [8]=race, [9]=class, [10]=classToken, [11]=damageDone, [12]=healingDone
+    
+    -- Collect player's team data (0-based indexing for storage)
     for i = 1, #playerTeamTable do
         local row = playerTeamTable[i]
-        local raceUpper
+        local raceUpper = convertRace(row[8])
+        local idx = i - 1  -- Convert to 0-based index
 
-        if not row[8] then
-            raceUpper = ''
-        else
-            local race = LibRaces:GetRaceToken(row[8])
-            if race == nil then
-                raceUpper = ''
-            else
-                raceUpper = race:upper()
-            end
-        end
-
-        self.current["stats"]["teamClass"][i - 1] = row[10]:upper()
-        self.current["stats"]["teamCharName"][i - 1] = row[1]
-        self.current["stats"]["teamRace"][i - 1] = raceUpper
-        self.current["stats"]["teamSpec"][i - 1] = self:GetSpecOrDefault(row[1])
+        self.current["stats"]["teamClass"][idx] = row[10] and row[10]:upper() or ''
+        self.current["stats"]["teamCharName"][idx] = row[1]
+        self.current["stats"]["teamRace"][idx] = raceUpper
+        self.current["stats"]["teamSpec"][idx] = self:GetSpecOrDefault(row[1])
     end
 
+    -- Collect enemy team data (0-based indexing for storage)
     for i = 1, #enemyTeamTable do
         local row = enemyTeamTable[i]
-        local raceUpper
+        local raceUpper = convertRace(row[8])
+        local idx = i - 1  -- Convert to 0-based index
 
-        if not row[8] then
-            raceUpper = ''
-        else
-            local race = LibRaces:GetRaceToken(row[8])
-            if race == nil then
-                raceUpper = ''
-            else
-                raceUpper = race:upper()
-            end
-        end
-
-        self.current["stats"]["enemyClass"][i - 1] = row[10]:upper()
-        self.current["stats"]["enemyName"][i - 1] = row[1]
-        self.current["stats"]["enemyRace"][i - 1] = raceUpper
+        self.current["stats"]["enemyClass"][idx] = row[10] and row[10]:upper() or ''
+        self.current["stats"]["enemyName"][idx] = row[1]
+        self.current["stats"]["enemyRace"][idx] = raceUpper
         self.current["stats"]["enemyFaction"] = self:RaceToFaction(raceUpper)
-        self.current["stats"]["enemySpec"][i - 1] = self:GetSpecOrDefault(row[1])
+        self.current["stats"]["enemySpec"][idx] = self:GetSpecOrDefault(row[1])
     end
 end
 
+-- Alliance races lookup table
+local ALLIANCE_RACES = {
+    HUMAN = true, GNOME = true, NIGHTELF = true,
+    DRAENEI = true, DWARF = true, WORGEN = true
+}
+
 function ArenaStats:RaceToFaction(race)
-    if race == "HUMAN" then
-        return 1
-    elseif race == "GNOME" then
-        return 1
-    elseif race == "NIGHTELF" then
-        return 1
-    elseif race == "DRAENEI" then
-        return 1
-    elseif race == "DWARF" then
-        return 1
-    elseif race == "WORGEN" then
-        return 1
-    else
-        return 0
-    end
+    return ALLIANCE_RACES[race] and 1 or 0
 end
 
 function ArenaStats:UPDATE_BATTLEFIELD_SCORE()
@@ -338,6 +350,8 @@ function ArenaStats:AddEntryToHistory(stats)
             table.remove(self.db.char.history, 1)
         end
     end
+    -- Invalidate BuildTable cache since history changed
+    self.tableCache = nil
 end
 
 function ArenaStats:DrawMinimapIcon()
@@ -389,10 +403,20 @@ function ArenaStats:CalculateTeamSize(row)
     return teamSize
 end
 
+--- Builds a display-ready table from the history database.
+--- Transforms the raw storage format (0-based indexed arrays) into a flat structure
+--- with named fields (e.g., teamPlayerClass1, teamPlayerClass2, etc.) for easier GUI rendering.
+--- Uses caching to avoid rebuilding when the history hasn't changed.
+--- @return table[] Array of arena match records, sorted from newest to oldest
 function ArenaStats:BuildTable()
-    local tbl = {}
-
     local tableLength = #self.db.char.history
+    
+    -- Return cached table if history size hasn't changed
+    if self.tableCache and self.tableCacheSize == tableLength then
+        return self.tableCache
+    end
+    
+    local tbl = {}
 
     for i = 1, tableLength do
         local row = self.db.char.history[tableLength + 1 - i]
@@ -402,9 +426,9 @@ function ArenaStats:BuildTable()
 
             ["startTime"] = row["startTime"],
             ["endTime"] = row["endTime"],
-            ["zoneId"] = ArenaStats:RemapZoneId(row["zoneId"]),
+            ["zoneId"] = self:RemapZoneId(row["zoneId"]),
             ["isRanked"] = row["isRanked"],
-            ["teamSize"] = ArenaStats:CalculateTeamSize(row),
+            ["teamSize"] = self:CalculateTeamSize(row),
             ["duration"] = (row["endTime"] and row["startTime"] and
                 (row["endTime"] - row["startTime"]) or 0),
 
@@ -498,6 +522,11 @@ function ArenaStats:BuildTable()
 
         })
     end
+    
+    -- Store in cache for subsequent calls
+    self.tableCache = tbl
+    self.tableCacheSize = tableLength
+    
     return tbl
 end
 
@@ -515,11 +544,23 @@ end
 
 function ArenaStats:ResetDatabase()
     self.db:ResetDB()
+    -- Invalidate BuildTable cache since database was reset
+    self.tableCache = nil
     self:Print(L["Database reset"])
 end
 
+-- Helper to safely get value or empty string
+local function safeVal(val)
+    return val ~= nil and val or ""
+end
+
+-- Helper to safely get indexed value from table
+local function safeIndexedVal(tbl, index)
+    return tbl and tbl[index] ~= nil and tbl[index] or ""
+end
+
 function ArenaStats:ExportCSV()
-    local csv =
+    local csvParts = {
         "isRanked,startTime,endTime,zoneId,duration,teamName,teamColor,winnerColor," ..
         "teamPlayerName1,teamPlayerName2,teamPlayerName3,teamPlayerName4,teamPlayerName5," ..
         "teamPlayerClass1,teamPlayerClass2,teamPlayerClass3,teamPlayerClass4,teamPlayerClass5," ..
@@ -528,118 +569,87 @@ function ArenaStats:ExportCSV()
         "enemyOldTeamRating,enemyNewTeamRating,enemyDiffRating,enemyMmr,enemyTeamName," ..
         "enemyPlayerName1,enemyPlayerName2,enemyPlayerName3,enemyPlayerName4,enemyPlayerName5," ..
         "enemyPlayerClass1,enemyPlayerClass2,enemyPlayerClass3,enemyPlayerClass4,enemyPlayerClass5," ..
-        "enemyPlayerRace1,enemyPlayerRace2,enemyPlayerRace3,enemyPlayerRace4,enemyPlayerRace5,enemyFaction,"..
+        "enemyPlayerRace1,enemyPlayerRace2,enemyPlayerRace3,enemyPlayerRace4,enemyPlayerRace5,enemyFaction," ..
         "enemySpec1,enemySpec2,enemySpec3,enemySpec4,enemySpec5," ..
-        "teamSpec1,teamSpec2,teamSpec3,teamSpec4,teamSpec5,"..
-        "\n"
+        "teamSpec1,teamSpec2,teamSpec3,teamSpec4,teamSpec5,\n"
+    }
 
     for _, row in ipairs(self.db.char.history) do
-        csv = csv .. (self:YesOrNo(row["isRanked"])) .. "," ..
-            (row["startTime"] ~= nil and row["startTime"] or "") .. "," ..
-            (row["endTime"] ~= nil and row["endTime"] or "") .. "," ..
-            (row["zoneId"] ~= nil and row["zoneId"] or "") .. "," ..
-            (row["startTime"] ~= nil and row["endTime"] ~= nil and
-                row["endTime"] - row["startTime"] or "") .. "," ..
-            (row["teamName"] ~= nil and row["teamName"] or "") .. "," ..
-            (row["teamColor"] ~= nil and row["teamColor"] or "") .. "," ..
-            (row["winnerColor"] ~= nil and row["winnerColor"] or "") ..
-            "," ..
-
-            (row["teamCharName"] and row["teamCharName"][0] ~= nil and
-                row["teamCharName"][0] or "") .. "," ..
-            (row["teamCharName"] and row["teamCharName"][1] ~= nil and
-                row["teamCharName"][1] or "") .. "," ..
-            (row["teamCharName"] and row["teamCharName"][2] ~= nil and
-                row["teamCharName"][2] or "") .. "," ..
-            (row["teamCharName"] and row["teamCharName"][3] ~= nil and
-                row["teamCharName"][3] or "") .. "," ..
-            (row["teamCharName"] and row["teamCharName"][4] ~= nil and
-                row["teamCharName"][4] or "") .. "," ..
-            (row["teamClass"] and row["teamClass"][0] ~= nil and
-                row["teamClass"][0] or "") .. "," ..
-            (row["teamClass"] and row["teamClass"][1] ~= nil and
-                row["teamClass"][1] or "") .. "," ..
-            (row["teamClass"] and row["teamClass"][2] ~= nil and
-                row["teamClass"][2] or "") .. "," ..
-            (row["teamClass"] and row["teamClass"][3] ~= nil and
-                row["teamClass"][3] or "") .. "," ..
-            (row["teamClass"] and row["teamClass"][4] ~= nil and
-                row["teamClass"][4] or "") .. "," ..
-            (row["teamRace"] and row["teamRace"][0] ~= nil and
-                row["teamRace"][0] or "") .. "," ..
-            (row["teamRace"] and row["teamRace"][1] ~= nil and
-                row["teamRace"][1] or "") .. "," ..
-            (row["teamRace"] and row["teamRace"][2] ~= nil and
-                row["teamRace"][2] or "") .. "," ..
-            (row["teamRace"] and row["teamRace"][3] ~= nil and
-                row["teamRace"][3] or "") .. "," ..
-            (row["teamRace"] and row["teamRace"][4] ~= nil and
-                row["teamRace"][4] or "") .. "," ..
-
-            (self:ComputeSafeNumber(row["oldTeamRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["newTeamRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["diffRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["mmr"])) .. "," ..
-
-            (self:ComputeSafeNumber(row["enemyOldTeamRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["enemyNewTeamRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["enemyDiffRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["enemyMmr"])) .. "," ..
-            (row["enemyTeamName"] ~= nil and row["enemyTeamName"] or "") ..
-            "," ..
-
-            (row["enemyName"] and row["enemyName"][0] ~= nil and
-                row["enemyName"][0] or "") .. "," ..
-            (row["enemyName"] and row["enemyName"][1] ~= nil and
-                row["enemyName"][1] or "") .. "," ..
-            (row["enemyName"] and row["enemyName"][2] ~= nil and
-                row["enemyName"][2] or "") .. "," ..
-            (row["enemyName"] and row["enemyName"][3] ~= nil and
-                row["enemyName"][3] or "") .. "," ..
-            (row["enemyName"] and row["enemyName"][4] ~= nil and
-                row["enemyName"][4] or "") .. "," ..
-            (row["enemyClass"] and row["enemyClass"][0] ~= nil and
-                row["enemyClass"][0] or "") .. "," ..
-            (row["enemyClass"] and row["enemyClass"][1] ~= nil and
-                row["enemyClass"][1] or "") .. "," ..
-            (row["enemyClass"] and row["enemyClass"][2] ~= nil and
-                row["enemyClass"][2] or "") .. "," ..
-            (row["enemyClass"] and row["enemyClass"][3] ~= nil and
-                row["enemyClass"][3] or "") .. "," ..
-            (row["enemyClass"] and row["enemyClass"][4] ~= nil and
-                row["enemyClass"][4] or "") .. "," ..
-            (row["enemyRace"] and row["enemyRace"][0] ~= nil and
-                row["enemyRace"][0] or "") .. "," ..
-            (row["enemyRace"] and row["enemyRace"][1] ~= nil and
-                row["enemyRace"][1] or "") .. "," ..
-            (row["enemyRace"] and row["enemyRace"][2] ~= nil and
-                row["enemyRace"][2] or "") .. "," ..
-            (row["enemyRace"] and row["enemyRace"][3] ~= nil and
-                row["enemyRace"][3] or "") .. "," ..
-            (row["enemyRace"] and row["enemyRace"][4] ~= nil and
-                row["enemyRace"][4] or "") .. "," ..
-            (self:ComputeFaction(row["enemyFaction"])) .. "," ..
-            (row["teamSpec"] and row["teamSpec"][0] ~= nil and
-                row["teamSpec"][0] or "") .. "," ..
-            (row["teamSpec"] and row["teamSpec"][1] ~= nil and
-                row["teamSpec"][1] or "") .. "," ..
-            (row["teamSpec"] and row["teamSpec"][2] ~= nil and
-                row["teamSpec"][2] or "") .. "," ..
-            (row["teamSpec"] and row["teamSpec"][3] ~= nil and
-                row["teamSpec"][3] or "") .. "," ..
-            (row["teamSpec"] and row["teamSpec"][4] ~= nil and
-                row["teamSpec"][4] or "") .. "," ..
-            (row["enemySpec"] and row["enemySpec"][0] ~= nil and
-                row["enemySpec"][0] or "") .. "," ..
-            (row["enemySpec"] and row["enemySpec"][1] ~= nil and
-                row["enemySpec"][1] or "") .. "," ..
-            (row["enemySpec"] and row["enemySpec"][2] ~= nil and
-                row["enemySpec"][2] or "") .. "," ..
-            (row["enemySpec"] and row["enemySpec"][3] ~= nil and
-                row["enemySpec"][3] or "") .. "," ..
-            (row["enemySpec"] and row["enemySpec"][4] ~= nil and
-                row["enemySpec"][4] or "") .. "," .. "\n"
+        local duration = (row["startTime"] and row["endTime"]) and (row["endTime"] - row["startTime"]) or ""
+        local rowParts = {
+            self:YesOrNo(row["isRanked"]),
+            safeVal(row["startTime"]),
+            safeVal(row["endTime"]),
+            safeVal(row["zoneId"]),
+            duration,
+            safeVal(row["teamName"]),
+            safeVal(row["teamColor"]),
+            safeVal(row["winnerColor"]),
+            -- Team player names
+            safeIndexedVal(row["teamCharName"], 0),
+            safeIndexedVal(row["teamCharName"], 1),
+            safeIndexedVal(row["teamCharName"], 2),
+            safeIndexedVal(row["teamCharName"], 3),
+            safeIndexedVal(row["teamCharName"], 4),
+            -- Team player classes
+            safeIndexedVal(row["teamClass"], 0),
+            safeIndexedVal(row["teamClass"], 1),
+            safeIndexedVal(row["teamClass"], 2),
+            safeIndexedVal(row["teamClass"], 3),
+            safeIndexedVal(row["teamClass"], 4),
+            -- Team player races
+            safeIndexedVal(row["teamRace"], 0),
+            safeIndexedVal(row["teamRace"], 1),
+            safeIndexedVal(row["teamRace"], 2),
+            safeIndexedVal(row["teamRace"], 3),
+            safeIndexedVal(row["teamRace"], 4),
+            -- Team ratings
+            self:ComputeSafeNumber(row["oldTeamRating"]),
+            self:ComputeSafeNumber(row["newTeamRating"]),
+            self:ComputeSafeNumber(row["diffRating"]),
+            self:ComputeSafeNumber(row["mmr"]),
+            -- Enemy ratings
+            self:ComputeSafeNumber(row["enemyOldTeamRating"]),
+            self:ComputeSafeNumber(row["enemyNewTeamRating"]),
+            self:ComputeSafeNumber(row["enemyDiffRating"]),
+            self:ComputeSafeNumber(row["enemyMmr"]),
+            safeVal(row["enemyTeamName"]),
+            -- Enemy player names
+            safeIndexedVal(row["enemyName"], 0),
+            safeIndexedVal(row["enemyName"], 1),
+            safeIndexedVal(row["enemyName"], 2),
+            safeIndexedVal(row["enemyName"], 3),
+            safeIndexedVal(row["enemyName"], 4),
+            -- Enemy player classes
+            safeIndexedVal(row["enemyClass"], 0),
+            safeIndexedVal(row["enemyClass"], 1),
+            safeIndexedVal(row["enemyClass"], 2),
+            safeIndexedVal(row["enemyClass"], 3),
+            safeIndexedVal(row["enemyClass"], 4),
+            -- Enemy player races
+            safeIndexedVal(row["enemyRace"], 0),
+            safeIndexedVal(row["enemyRace"], 1),
+            safeIndexedVal(row["enemyRace"], 2),
+            safeIndexedVal(row["enemyRace"], 3),
+            safeIndexedVal(row["enemyRace"], 4),
+            self:ComputeFaction(row["enemyFaction"]),
+            -- Team specs
+            safeIndexedVal(row["teamSpec"], 0),
+            safeIndexedVal(row["teamSpec"], 1),
+            safeIndexedVal(row["teamSpec"], 2),
+            safeIndexedVal(row["teamSpec"], 3),
+            safeIndexedVal(row["teamSpec"], 4),
+            -- Enemy specs
+            safeIndexedVal(row["enemySpec"], 0),
+            safeIndexedVal(row["enemySpec"], 1),
+            safeIndexedVal(row["enemySpec"], 2),
+            safeIndexedVal(row["enemySpec"], 3),
+            safeIndexedVal(row["enemySpec"], 4),
+        }
+        csvParts[#csvParts + 1] = table.concat(rowParts, ",") .. ",\n"
     end
+
+    local csv = table.concat(csvParts)
     ArenaStats:ExportFrame().eb:SetText(csv)
     ArenaStats:ExportFrame():SetTitle(L["Export"])
     ArenaStats:ExportFrame().eb:SetNumLines(29)
@@ -688,6 +698,6 @@ function ArenaStats:ComputeSafeNumber(number)
     return number
 end
 
-function ArenaStats:ShouldHideCharacterNamesTooltips()
-    return not self.db.profile.characterNamesOnHover.hide
+function ArenaStats:ShouldShowCharacterNamesTooltips()
+    return self.db.profile.showCharacterNamesOnHover
 end
