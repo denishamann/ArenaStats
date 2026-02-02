@@ -1,5 +1,5 @@
 local addonName = "ArenaStats"
-local addonTitle = select(2, C_AddOns.GetAddOnInfo(addonName))
+local addonTitle = select(2, (C_AddOns and C_AddOns.GetAddOnInfo or GetAddOnInfo)(addonName))
 local ArenaStats = _G.LibStub("AceAddon-3.0"):NewAddon(addonName,
                                                        "AceConsole-3.0",
                                                        "AceEvent-3.0")
@@ -75,25 +75,26 @@ function ArenaStats:ScanUnitBuffs(unit)
     if not unit then return end
 
     for n = 1, 30 do
-        local auraData = C_UnitAuras.GetAuraDataByIndex(unit, n, "HELPFUL")
+        local name, spellID, unitCaster = self:GetUnitBuff(unit, n)
 
-        if (not auraData) then
+        if not name then
             break
         end
 
-        if (not auraData.name) then
-            break
-        end
-
-        local spellID = auraData.spellId
-        local unitCaster = auraData.sourceUnit
-
-        if self.specSpells[spellID] and unitCaster then -- Check for auras that detect a spec
-            local unitPet = string.gsub(unit, "%d$", "pet%1")
-            if UnitIsUnit(unit, unitCaster) or UnitIsUnit(unitPet, unitCaster) then
-                local casterName = GetUnitName(unitCaster, true)
+        if self.specSpells[spellID] then
+            -- For TBC, we can't reliably get unitCaster, so we assume self-buffs
+            if self.isTBC then
+                local casterName = GetUnitName(unit, true)
                 if casterName then
                     self:OnSpecDetected(casterName, self.specSpells[spellID])
+                end
+            elseif unitCaster then
+                local unitPet = string.gsub(unit, "%d$", "pet%1")
+                if UnitIsUnit(unit, unitCaster) or UnitIsUnit(unitPet, unitCaster) then
+                    local casterName = GetUnitName(unitCaster, true)
+                    if casterName then
+                        self:OnSpecDetected(casterName, self.specSpells[spellID])
+                    end
                 end
             end
         end

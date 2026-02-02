@@ -1,6 +1,6 @@
 local _G = _G
 local addonName = "ArenaStats"
-local addonTitle = select(2, C_AddOns.GetAddOnInfo(addonName))
+local addonTitle = select(2, (C_AddOns and C_AddOns.GetAddOnInfo or GetAddOnInfo)(addonName))
 local ArenaStats = _G.LibStub("AceAddon-3.0"):GetAddon(addonName)
 local L = _G.LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 local AceGUI = _G.LibStub("AceGUI-3.0")

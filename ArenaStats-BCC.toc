@@ -1,4 +1,4 @@
-## Interface: 40402
+## Interface: 20505
 ## Title: ArenaStats
 ## Notes: Arena history and statistics with csv export
 ## Author: Kallias-Sulfuron
@@ -13,4 +13,4 @@ Compat.lua
 GUI.lua
 HybridScrollFrame.xml
 options.lua
-Constants_Cata.lua
+Constants_TBC.lua
