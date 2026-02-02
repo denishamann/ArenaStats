@@ -55,11 +55,10 @@ function ArenaStats:CreateShortMapName(mapName)
 end
 
 ArenaStats.mapListShortName = {
-    [559] = ArenaStats:CreateShortMapName(GetRealZoneText(559)),
-    [562] = ArenaStats:CreateShortMapName(GetRealZoneText(562)),
-    [572] = ArenaStats:CreateShortMapName(GetRealZoneText(572)),
-    [617] = ArenaStats:CreateShortMapName(GetRealZoneText(617)),
-    [618] = ArenaStats:CreateShortMapName(GetRealZoneText(618))
+   -- Hardcoded TBC Arena Maps
+   [559] = "NAG",
+   [562] = "BEA",
+   [572] = "ROL",
 }
 
 function ArenaStats:CreateGUI()
@@ -72,6 +71,12 @@ function ArenaStats:CreateGUI()
     filters.arenaType = 0
     filters.name = ""
 
+    function ArenaStats:SetData(newRows)
+        rows = newRows or {}
+        self:SortTable()
+        self:UpdateTableView()
+    end
+
     asGui.f = AceGUI:Create("Frame")
     asGui.f:Hide()
     asGui.f:SetWidth(859)
@@ -80,6 +85,14 @@ function ArenaStats:CreateGUI()
     asGui.f:SetTitle(addonTitle)
     asGui.f:SetStatusText("Status Bar")
     asGui.f:SetLayout("Flow")
+    
+    -- Make window opaque solid black
+    if asGui.f.frame.SetBackdrop then
+        local backdrop = asGui.f.frame:GetBackdrop() or {}
+        backdrop.bgFile = "Interface\\Buttons\\WHITE8X8"
+        asGui.f.frame:SetBackdrop(backdrop)
+        asGui.f.frame:SetBackdropColor(0, 0, 0, 0.85)
+    end
 
     table.insert(_G.UISpecialFrames, "AsFrame")
     _G.AsFrame = asGui.f
@@ -150,6 +163,7 @@ function ArenaStats:CreateGUI()
     self:CreateScoreButton(tableHeader, 100, "Enemy Team")
     self:CreateScoreButton(tableHeader, 75, "Enemy MMR")
     self:CreateScoreButton(tableHeader, 80, "Enemy Faction")
+    self:CreateScoreButton(tableHeader, 25, "")
 
     -- TABLE
     local scrollContainer = AceGUI:Create("SimpleGroup")
@@ -209,7 +223,11 @@ end
 function ArenaStats:CreateScoreButton(tableHeader, width, localeStr)
     local btn = AceGUI:Create("Label")
     btn:SetWidth(width)
-    btn:SetText(string.format(" %s ", L[localeStr]))
+    local text = ""
+    if localeStr and localeStr ~= "" then
+        text = L[localeStr]
+    end
+    btn:SetText(string.format(" %s ", text))
     btn:SetJustifyH("LEFT")
     tableHeader:AddChild(btn)
     local margin = AceGUI:Create("Label")
@@ -259,23 +277,25 @@ function ArenaStats:SortClassSpecTable(a, b)
     -- Sort nils to the end of the list
     -- Healer specs pushed to the end (before nils)
     -- If no spec then sort by class as before
-    if not a or not b then
-        return not b
-    end
-    if not a.class or not b.class then
-        return not b.class
-    end
-    if not a.spec or not b.spec then
-        return a.class < b.class
-    end
-    if self:IsHealerSpec(a.spec) and not self:IsHealerSpec(b.spec) then
-        return false
-    end
-    if not self:IsHealerSpec(a.spec) and self:IsHealerSpec(b.spec) then
-        return true
-    end
+function ArenaStats:SortClassSpecTable(a, b)
+    -- Sort nils to the end of the list
+    if not a or not a.class then return false end
+    if not b or not b.class then return true end
+
+    -- Safe spec sort
+    local specA = a.spec
+    local specB = b.spec
+
+    -- Healer check
+    local isHealerA = self:IsHealerSpec(specA)
+    local isHealerB = self:IsHealerSpec(specB)
+
+    if isHealerA and not isHealerB then return false end
+    if not isHealerA and isHealerB then return true end
     
+    -- Default to class comparison
     return a.class < b.class
+end
 end
 
 function ArenaStats:IsHealerSpec(spec) 
@@ -285,6 +305,7 @@ end
 -- Helper to populate reusable class/spec table
 local function populateClassSpecTable(tbl, row, prefix)
     for i = 1, 5 do
+        if not tbl[i] then tbl[i] = {} end
         tbl[i].class = row[prefix .. "Class" .. i]
         tbl[i].spec = row[prefix .. "Spec" .. i]
     end
@@ -391,6 +412,30 @@ function ArenaStats:RefreshLayout()
             button.EnemyFaction:SetTexture(self:FactionIconId(
                                                row["enemyFaction"]))
 
+            -- Create or Update Delete Button
+            -- Create or Update Delete Button
+            if not button.Delete then
+                button.Delete = CreateFrame("Button", nil, button)
+                button.Delete:SetSize(16, 16)
+                -- Moved 40px to the right as requested
+                button.Delete:SetPoint("LEFT", button.EnemyFaction, "RIGHT", 40, 0)
+                button.Delete:SetNormalTexture("Interface\\Buttons\\UI-GroupLoot-Pass-Up")
+                button.Delete:SetHighlightTexture("Interface\\Buttons\\UI-GroupLoot-Pass-Highlight")
+                button.Delete:SetPushedTexture("Interface\\Buttons\\UI-GroupLoot-Pass-Down")
+                -- Ensure button intercepts clicks
+                button.Delete:EnableMouse(true)
+                button.Delete:SetFrameLevel(button:GetFrameLevel() + 5)
+            end
+            button.Delete:SetScript("OnClick", function()
+                 ArenaStats:DeleteEntry(row)
+            end)
+            button.Delete:Show()
+
+            button:EnableMouse(true)
+            button:SetScript("OnClick", function()
+                 ArenaStats:ShowMatchDetails(row)
+            end)
+
             button:SetWidth(asGui.scrollFrame.scrollChild:GetWidth())
             button:Show()
         else
@@ -435,76 +480,72 @@ function ArenaStats:HumanDuration(seconds)
     return string.format(L["%ih %im"], hours, (minutes - hours * 60))
 end
 
--- Spec icon lookup table: [class][spec] = iconId, with "default" for class icon
-local SPEC_ICONS = {
-    MAGE = {
-        Frost = 135846, Fire = 135809, Arcane = 135932,
-        default = 626001
-    },
-    PRIEST = {
-        Shadow = 136207, Holy = 237542, Discipline = 135940,
-        default = 626004
-    },
-    DRUID = {
-        Restoration = 136041, Feral = 136112, Balance = 136096,
-        default = 625999
-    },
-    SHAMAN = {
-        Restoration = 136052, Elemental = 136048, Enhancement = 136051,
-        default = 626006
-    },
-    PALADIN = {
-        Retribution = 135873, Holy = 135920, Protection = 236264,
-        default = 626003
-    },
-    WARLOCK = {
-        Affliction = 136145, Demonology = 136172, Destruction = 136186,
-        default = 626007
-    },
-    WARRIOR = {
-        Arms = 132355, Fury = 132347, Protection = 132341,
-        default = 626008
-    },
-    HUNTER = {
-        BeastMastery = 461112, Marksmanship = 236179, Survival = 461113,
-        default = 626000
-    },
-    ROGUE = {
-        Assassination = 132292, Combat = 132090, Subtlety = 132320,
-        default = 626005
-    },
-    DEATHKNIGHT = {
-        Frost = 135773, Unholy = 135775, Blood = 135770,
-        default = 135771
-    },
-}
-
 function ArenaStats:ClassIconId(classSpec)
     if not classSpec then
-        return 0
-    end
-
-    local className = classSpec.class
-    local classIcons = SPEC_ICONS[className]
-    if not classIcons then
-        return 0
+        return nil
     end
 
     local spec = classSpec.spec
-    if not self.db.profile.showSpec or not spec then
-        return classIcons.default
-    end
+    local className = classSpec.class
 
-    return classIcons[spec] or classIcons.default
+    if className == "MAGE" then
+        if spec == "Frost" then return "Interface\\Icons\\Spell_Frost_FrostBolt02" end
+        if spec == "Fire" then return "Interface\\Icons\\Spell_Fire_FireBolt02" end
+        if spec == "Arcane" then return "Interface\\Icons\\Spell_Holy_MagicalSentry" end
+        return "Interface\\Icons\\ClassIcon_Mage"
+    elseif className == "PRIEST" then
+        if spec == "Shadow" then return "Interface\\Icons\\Spell_Shadow_ShadowWordPain" end
+        if spec == "Holy" then return "Interface\\Icons\\Spell_Holy_HolyBolt" end
+        if spec == "Discipline" then return "Interface\\Icons\\Spell_Holy_WordFortitude" end
+        return "Interface\\Icons\\ClassIcon_Priest"
+    elseif className == "DRUID" then
+        if spec == "Restoration" then return "Interface\\Icons\\Spell_Nature_HealingTouch" end
+        if spec == "Feral" then return "Interface\\Icons\\Ability_Racial_BearForm" end
+        if spec == "Balance" then return "Interface\\Icons\\Spell_Nature_StarFall" end
+        return "Interface\\Icons\\ClassIcon_Druid"
+    elseif className == "SHAMAN" then
+        if spec == "Restoration" then return "Interface\\Icons\\Spell_Nature_HealingWaveGreater" end
+        if spec == "Elemental" then return "Interface\\Icons\\Spell_Nature_Lightning" end
+        if spec == "Enhancement" then return "Interface\\Icons\\Spell_Nature_LightningShield" end
+        return "Interface\\Icons\\ClassIcon_Shaman"
+    elseif className == "PALADIN" then
+        if spec == "Retribution" then return "Interface\\Icons\\Spell_Holy_AuraOfLight" end
+        if spec == "Holy" then return "Interface\\Icons\\Spell_Holy_HolyBolt" end
+        if spec == "Protection" then return "Interface\\Icons\\Spell_Holy_DevotionAura" end
+        return "Interface\\Icons\\ClassIcon_Paladin"
+    elseif className == "WARLOCK" then
+        if spec == "Affliction" then return "Interface\\Icons\\Spell_Shadow_DeathCoil" end
+        if spec == "Demonology" then return "Interface\\Icons\\Spell_Shadow_SummonFelGuard" end
+        if spec == "Destruction" then return "Interface\\Icons\\Spell_Shadow_RainOfFire" end
+        return "Interface\\Icons\\ClassIcon_Warlock"
+    elseif className == "WARRIOR" then
+        if spec == "Arms" then return "Interface\\Icons\\Ability_Warrior_SavageBlow" end
+        if spec == "Fury" then return "Interface\\Icons\\Spell_Nature_BloodLust" end
+        if spec == "Protection" then return "Interface\\Icons\\Ability_Warrior_DefensiveStance" end
+        return "Interface\\Icons\\ClassIcon_Warrior"
+    elseif className == "HUNTER" then
+        if spec == "BeastMastery" then return "Interface\\Icons\\Ability_Hunter_BeastTaming" end
+        if spec == "Marksmanship" then return "Interface\\Icons\\Ability_Marksmanship" end
+        if spec == "Survival" then return "Interface\\Icons\\Ability_Hunter_SwiftStrike" end
+        return "Interface\\Icons\\ClassIcon_Hunter"
+    elseif className == "ROGUE" then
+        if spec == "Assassination" then return "Interface\\Icons\\Ability_Rogue_Eviscerate" end
+        if spec == "Combat" then return "Interface\\Icons\\Ability_BackStab" end
+        if spec == "Subtlety" then return "Interface\\Icons\\Ability_Stealth" end
+        return "Interface\\Icons\\ClassIcon_Rogue"
+    elseif className == "DEATHKNIGHT" then
+        return "Interface\\Icons\\Spell_DeathKnight_ClassIcon"
+    end
+    return nil
 end
 
 function ArenaStats:FactionIconId(factionId)
-    if not factionId then return 0 end
+    if not factionId then return nil end
 
     if factionId == 0 then
-        return 132485
+        return "Interface\\Icons\\Inv_BannerPVP_01"
     else
-        return 132486
+        return "Interface\\Icons\\Inv_BannerPVP_02"
     end
 end
 
@@ -519,6 +560,10 @@ function ArenaStats:ColorForRating(rating)
 end
 
 function ArenaStats:GetShortMapName(id)
+    if id == 559 then return "NAG" end
+    if id == 562 then return "BEA" end
+    if id == 572 then return "ROL" end
+
     local name = ArenaStats.mapListShortName[id]
     if name then
         return name

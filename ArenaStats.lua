@@ -254,11 +254,15 @@ function ArenaStats:SetLastArenaRankingData()
     self.current["stats"]["teamCharName"] = {}
     self.current["stats"]["teamRace"] = {}
     self.current["stats"]["teamSpec"] = {}
+    self.current["stats"]["teamDamage"] = {}
+    self.current["stats"]["teamHealing"] = {}
 
     self.current["stats"]["enemyClass"] = {}
     self.current["stats"]["enemyName"] = {}
     self.current["stats"]["enemyRace"] = {}
     self.current["stats"]["enemySpec"] = {}
+    self.current["stats"]["enemyDamage"] = {}
+    self.current["stats"]["enemyHealing"] = {}
 
     -- Determine which raw data table corresponds to player's team vs enemy team
     local playerTeamTable = (playerTeam == 'GREEN') and greenTeam or goldTeam
@@ -285,6 +289,8 @@ function ArenaStats:SetLastArenaRankingData()
         self.current["stats"]["teamCharName"][idx] = row[1]
         self.current["stats"]["teamRace"][idx] = raceUpper
         self.current["stats"]["teamSpec"][idx] = self:GetSpecOrDefault(row[1])
+        self.current["stats"]["teamDamage"][idx] = row[11]
+        self.current["stats"]["teamHealing"][idx] = row[12]
     end
 
     -- Collect enemy team data (0-based indexing for storage)
@@ -297,7 +303,10 @@ function ArenaStats:SetLastArenaRankingData()
         self.current["stats"]["enemyName"][idx] = row[1]
         self.current["stats"]["enemyRace"][idx] = raceUpper
         self.current["stats"]["enemyFaction"] = self:RaceToFaction(raceUpper)
+        self.current["stats"]["enemyFaction"] = self:RaceToFaction(raceUpper)
         self.current["stats"]["enemySpec"][idx] = self:GetSpecOrDefault(row[1])
+        self.current["stats"]["enemyDamage"][idx] = row[11]
+        self.current["stats"]["enemyHealing"][idx] = row[12]
     end
 end
 
@@ -363,15 +372,14 @@ function ArenaStats:DrawMinimapIcon()
                 icon = "interface/icons/achievement_arena_2v2_7",
                 OnClick = function(self, button)
                     if button == "RightButton" then
-                        _G.InterfaceOptionsFrame_OpenToCategory(addonName)
-                        _G.InterfaceOptionsFrame_OpenToCategory(addonName)
+                        _G.LibStub("AceConfigDialog-3.0"):Open(addonName)
                     else
                         ArenaStats:Toggle()
                     end
                 end,
                 OnTooltipShow = function(tooltip)
                     tooltip:AddLine(string.format("%s |cff777777v%s|r", addonTitle,
-                        "0.3.0"))
+                        "0.2.5"))
                     tooltip:AddLine(string.format("|cFFCFCFCF%s|r %s", L["Left Click"],
                         L["to open the main window"]))
                     tooltip:AddLine(string.format("|cFFCFCFCF%s|r %s", L["Right Click"],
@@ -422,6 +430,7 @@ function ArenaStats:BuildTable()
         local row = self.db.char.history[tableLength + 1 - i]
         table.insert(tbl, {
 
+            ["_original"] = row,
             -- Common stats
 
             ["startTime"] = row["startTime"],
@@ -466,6 +475,18 @@ function ArenaStats:BuildTable()
             ["teamPlayerSpec3"] = row["teamSpec"] and row["teamSpec"][2] or nil,
             ["teamPlayerSpec4"] = row["teamSpec"] and row["teamSpec"][3] or nil,
             ["teamPlayerSpec5"] = row["teamSpec"] and row["teamSpec"][4] or nil,
+
+            ["teamPlayerDamage1"] = row["teamDamage"] and row["teamDamage"][0] or 0,
+            ["teamPlayerDamage2"] = row["teamDamage"] and row["teamDamage"][1] or 0,
+            ["teamPlayerDamage3"] = row["teamDamage"] and row["teamDamage"][2] or 0,
+            ["teamPlayerDamage4"] = row["teamDamage"] and row["teamDamage"][3] or 0,
+            ["teamPlayerDamage5"] = row["teamDamage"] and row["teamDamage"][4] or 0,
+
+            ["teamPlayerHealing1"] = row["teamHealing"] and row["teamHealing"][0] or 0,
+            ["teamPlayerHealing2"] = row["teamHealing"] and row["teamHealing"][1] or 0,
+            ["teamPlayerHealing3"] = row["teamHealing"] and row["teamHealing"][2] or 0,
+            ["teamPlayerHealing4"] = row["teamHealing"] and row["teamHealing"][3] or 0,
+            ["teamPlayerHealing5"] = row["teamHealing"] and row["teamHealing"][4] or 0,
 
             ["oldTeamRating"] = row["oldTeamRating"],
             ["newTeamRating"] = row["newTeamRating"],
@@ -513,6 +534,18 @@ function ArenaStats:BuildTable()
             ["enemyPlayerSpec3"] = row["enemySpec"] and row["enemySpec"][2] or nil,
             ["enemyPlayerSpec4"] = row["enemySpec"] and row["enemySpec"][3] or nil,
             ["enemyPlayerSpec5"] = row["enemySpec"] and row["enemySpec"][4] or nil,
+            
+            ["enemyPlayerDamage1"] = row["enemyDamage"] and row["enemyDamage"][0] or 0,
+            ["enemyPlayerDamage2"] = row["enemyDamage"] and row["enemyDamage"][1] or 0,
+            ["enemyPlayerDamage3"] = row["enemyDamage"] and row["enemyDamage"][2] or 0,
+            ["enemyPlayerDamage4"] = row["enemyDamage"] and row["enemyDamage"][3] or 0,
+            ["enemyPlayerDamage5"] = row["enemyDamage"] and row["enemyDamage"][4] or 0,
+
+            ["enemyPlayerHealing1"] = row["enemyHealing"] and row["enemyHealing"][0] or 0,
+            ["enemyPlayerHealing2"] = row["enemyHealing"] and row["enemyHealing"][1] or 0,
+            ["enemyPlayerHealing3"] = row["enemyHealing"] and row["enemyHealing"][2] or 0,
+            ["enemyPlayerHealing4"] = row["enemyHealing"] and row["enemyHealing"][3] or 0,
+            ["enemyPlayerHealing5"] = row["enemyHealing"] and row["enemyHealing"][4] or 0,
             ["enemyFaction"] = row["enemyFaction"],
 
             ["enemyOldTeamRating"] = row["enemyOldTeamRating"],
@@ -700,4 +733,145 @@ end
 
 function ArenaStats:ShouldShowCharacterNamesTooltips()
     return self.db.profile.showCharacterNamesOnHover
+end
+
+function ArenaStats:TestData()
+    local brackets = {2, 3, 5}
+    local teamSize = brackets[math.random(#brackets)]
+    local maps = {559, 562, 572}
+    local zoneId = maps[math.random(#maps)]
+    local duration = math.random(120, 900) -- 2 to 15 mins
+    local startTime = _G.time() - duration
+    local endTime = _G.time()
+
+    local classes = {
+        ["WARRIOR"] = {"Arms", "Fury", "Protection"},
+        ["PALADIN"] = {"Holy", "Protection", "Retribution"},
+        ["HUNTER"] = {"BeastMastery", "Marksmanship", "Survival"},
+        ["ROGUE"] = {"Assassination", "Combat", "Subtlety"},
+        ["PRIEST"] = {"Discipline", "Holy", "Shadow"},
+        ["SHAMAN"] = {"Elemental", "Enhancement", "Restoration"},
+        ["MAGE"] = {"Arcane", "Fire", "Frost"},
+        ["WARLOCK"] = {"Affliction", "Demonology", "Destruction"},
+        ["DRUID"] = {"Balance", "Feral", "Restoration"}
+    }
+    
+    local classKeys = {}
+    for k in pairs(classes) do table.insert(classKeys, k) end
+
+    local function getRandomPlayer()
+        local class = classKeys[math.random(#classKeys)]
+        local specs = classes[class]
+        local spec = specs[math.random(#specs)]
+        local races = {"Human", "Orc", "Undead", "Night Elf", "Gnome", "Troll", "Dwarf", "Blood Elf", "Draenei"}
+        return {
+            name = "Player" .. math.random(1000),
+            class = class,
+            spec = spec,
+            race = races[math.random(#races)]
+        }
+    end
+
+
+
+    local teamColors = {"GOLD", "GREEN"}
+    local myTeamColor = teamColors[math.random(2)]
+    local winnerColor = teamColors[math.random(2)]
+
+    local oldRating = math.random(1500, 2200)
+    local enemyOldRating = math.random(1500, 2200)
+    
+    local change = math.random(10, 25)
+    local newRating, enemyNewRating
+    
+    if myTeamColor == winnerColor then
+        -- We won
+        newRating = oldRating + change
+        enemyNewRating = enemyOldRating - change
+    else
+        -- We lost
+        newRating = oldRating - change
+        enemyNewRating = enemyOldRating + change
+    end
+
+    local stats = {
+        startTime = startTime,
+        endTime = endTime,
+        zoneId = zoneId,
+        isRanked = true,
+        teamSize = teamSize,
+        teamName = "Test Team",
+        teamColor = myTeamColor,
+        winnerColor = winnerColor,
+        oldTeamRating = oldRating,
+        newTeamRating = newRating,
+        mmr = math.random(1500, 2500),
+        enemyTeamName = "Enemy Team",
+        enemyOldTeamRating = enemyOldRating,
+        enemyNewTeamRating = enemyNewRating,
+        enemyMmr = math.random(1500, 2500),
+        teamClass = {}, teamCharName = {}, teamRace = {}, teamSpec = {}, teamDamage = {}, teamHealing = {},
+        enemyClass = {}, enemyName = {}, enemyRace = {}, enemySpec = {}, enemyDamage = {}, enemyHealing = {}, enemyFaction = math.random(0, 1)
+    }
+    stats.diffRating = stats.newTeamRating - stats.oldTeamRating
+    stats.enemyDiffRating = stats.enemyNewTeamRating - stats.enemyOldTeamRating
+
+    -- Generate players
+    for i = 0, teamSize - 1 do
+        local p = getRandomPlayer()
+        stats.teamClass[i] = p.class
+        stats.teamCharName[i] = p.name
+        stats.teamRace[i] = string.upper(p.race)
+        stats.teamSpec[i] = p.spec
+        stats.teamDamage[i] = math.random(0, 100000)
+        stats.teamHealing[i] = math.random(0, 100000)
+
+        local e = getRandomPlayer()
+        stats.enemyClass[i] = e.class
+        stats.enemyName[i] = e.name
+        stats.enemyRace[i] = string.upper(e.race)
+        stats.enemySpec[i] = e.spec
+        stats.enemyDamage[i] = math.random(0, 100000)
+        stats.enemyHealing[i] = math.random(0, 100000)
+    end
+
+    self:AddEntryToHistory(stats)
+    self:ReloadData()
+    self:Print("Random test data generated")
+end
+
+function ArenaStats:DeleteEntry(entry)
+    local target = entry._original or entry
+    for i, v in ipairs(self.db.char.history) do
+        if v == target then
+            table.remove(self.db.char.history, i)
+            self:ReloadData()
+            self:Print("Match deleted.")
+            return
+        end
+    end
+end
+
+function ArenaStats:Toggle()
+    if asGui and asGui.f:IsShown() then
+        asGui.f:Hide()
+    else
+        if not asGui then
+            self:CreateGUI()
+            if self.SetData then
+                self:SetData(self:BuildTable())
+            end
+        else
+            if self.SetData then
+                self:SetData(self:BuildTable())
+            end
+        end
+        asGui.f:Show()
+    end
+end
+
+function ArenaStats:ReloadData()
+    if self.SetData then
+        self:SetData(self:BuildTable())
+    end
 end
