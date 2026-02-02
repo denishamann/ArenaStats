@@ -215,13 +215,11 @@ function ArenaStats:EnemyNameFilterRow(row)
     if filters.name == "" then
         return false
     end
-    for category, val in pairs(row) do
-        -- find player names within the row
-        if (type(val) == "string" and category:sub(1, #"enemyPlayerName") == "enemyPlayerName") then
-            -- if the filter.name value is anywhere within a substring of the player names
-            if (string.find(val:lower(), filters.name:lower(), 1, true)) then
-                return false
-            end
+    local lowerFilter = filters.name:lower()
+    for i = 1, 5 do
+        local name = row["enemyPlayerName" .. i]
+        if name and name:lower():find(lowerFilter, 1, true) then
+            return false
         end
     end
     return true
@@ -446,133 +444,67 @@ function ArenaStats:HumanDuration(seconds)
     return string.format(L["%ih %im"], hours, (minutes - hours * 60))
 end
 
+-- Spec icon lookup table: [class][spec] = iconId, with "default" for class icon
+local SPEC_ICONS = {
+    MAGE = {
+        Frost = 135846, Fire = 135809, Arcane = 135932,
+        default = 626001
+    },
+    PRIEST = {
+        Shadow = 136207, Holy = 237542, Discipline = 135940,
+        default = 626004
+    },
+    DRUID = {
+        Restoration = 136041, Feral = 136112, Balance = 136096,
+        default = 625999
+    },
+    SHAMAN = {
+        Restoration = 136052, Elemental = 136048, Enhancement = 136051,
+        default = 626006
+    },
+    PALADIN = {
+        Retribution = 135873, Holy = 135920, Protection = 236264,
+        default = 626003
+    },
+    WARLOCK = {
+        Affliction = 136145, Demonology = 136172, Destruction = 136186,
+        default = 626007
+    },
+    WARRIOR = {
+        Arms = 132355, Fury = 132347, Protection = 132341,
+        default = 626008
+    },
+    HUNTER = {
+        BeastMastery = 461112, Marksmanship = 236179, Survival = 461113,
+        default = 626000
+    },
+    ROGUE = {
+        Assassination = 132292, Combat = 132090, Subtlety = 132320,
+        default = 626005
+    },
+    DEATHKNIGHT = {
+        Frost = 135773, Unholy = 135775, Blood = 135770,
+        default = 135771
+    },
+}
+
 function ArenaStats:ClassIconId(classSpec)
     if not classSpec then
         return 0
     end
 
-    local spec = classSpec.spec
     local className = classSpec.class
-
-    if self.db.profile.showSpec.hide then
-        spec = "" 
+    local classIcons = SPEC_ICONS[className]
+    if not classIcons then
+        return 0
     end
 
-    if not spec then
-        spec = ""
+    local spec = classSpec.spec
+    if self.db.profile.showSpec.hide or not spec then
+        return classIcons.default
     end
 
-    if className == "MAGE" then
-        if spec == "Frost" then
-            return 135846
-        end
-        if spec == "Fire" then
-            return 135809
-        end
-        if spec == "Arcane" then
-            return 135932
-        end
-        return 626001
-    elseif className == "PRIEST" then
-        if spec == "Shadow" then
-            return 136207
-        end
-        if spec == "Holy" then
-            return 237542
-        end
-        if spec == "Discipline" then
-            return 135940
-        end
-        return 626004
-    elseif className == "DRUID" then
-        if spec == "Restoration" then
-            return 136041
-        end
-        if spec == "Feral" then
-            return 136112
-        end
-        if spec == "Balance" then
-            return 136096
-        end
-        return 625999
-    elseif className == "SHAMAN" then
-        if spec == "Restoration" then
-            return 136052
-        end
-        if spec == "Elemental" then
-            return 136048
-        end
-        if spec == "Enhancement" then
-            return 136051
-        end
-        return 626006
-    elseif className == "PALADIN" then
-        if spec == "Retribution" then
-            return 135873
-        end
-        if spec == "Holy" then
-            return 135920
-        end
-        if spec == "Protection" then
-            return 236264
-        end
-        return 626003
-    elseif className == "WARLOCK" then
-        if spec == "Affliction" then
-            return 136145
-        end
-        if spec == "Demonology" then
-            return 136172
-        end
-        if spec == "Destruction" then
-            return 136186
-        end
-        return 626007
-    elseif className == "WARRIOR" then
-        if spec == "Arms" then
-            return 132355
-        end
-        if spec == "Fury" then
-            return 132347
-        end
-        if spec == "Protection" then
-            return 132341
-        end
-        return 626008
-    elseif className == "HUNTER" then
-        if spec == "BeastMastery" then
-            return 461112
-        end
-        if spec == "Marksmanship" then
-            return 236179
-        end
-        if spec == "Survival" then
-            return 461113
-        end
-        return 626000
-    elseif className == "ROGUE" then
-        if spec == "Assassination" then
-            return 132292
-        end
-        if spec == "Combat" then
-            return 132090
-        end
-        if spec == "Subtlety" then
-            return 132320
-        end
-        return 626005
-    elseif className == "DEATHKNIGHT" then
-        if spec == "Frost" then
-            return 135773
-        end
-        if spec == "Unholy" then
-            return 135775
-        end
-        if spec == "Blood" then
-            return 135770
-        end
-        return 135771
-    end
+    return classIcons[spec] or classIcons.default
 end
 
 function ArenaStats:FactionIconId(factionId)

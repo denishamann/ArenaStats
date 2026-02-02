@@ -49,6 +49,13 @@ function ArenaStats:OnInitialize()
     self:Reset()
 end
 
+function ArenaStats:OnDisable()
+    self:UnregisterAllEvents()
+    if _G.AsFrame then
+        _G.AsFrame:Hide()
+    end
+end
+
 function ArenaStats:OnSpecDetected(unitName, spec)
     local existingPlayer = self.specTable[unitName]
 
@@ -60,6 +67,8 @@ function ArenaStats:OnSpecDetected(unitName, spec)
 end
 
 function ArenaStats:ScanUnitBuffs(unit)
+    if not unit then return end
+
     for n = 1, 30 do
         local auraData = C_UnitAuras.GetAuraDataByIndex(unit, n, "HELPFUL")
 
@@ -77,7 +86,10 @@ function ArenaStats:ScanUnitBuffs(unit)
         if self.specSpells[spellID] and unitCaster then -- Check for auras that detect a spec
             local unitPet = string.gsub(unit, "%d$", "pet%1")
             if UnitIsUnit(unit, unitCaster) or UnitIsUnit(unitPet, unitCaster) then
-                self:OnSpecDetected(GetUnitName(unitCaster, true), self.specSpells[spellID])
+                local casterName = GetUnitName(unitCaster, true)
+                if casterName then
+                    self:OnSpecDetected(casterName, self.specSpells[spellID])
+                end
             end
         end
     end
@@ -91,42 +103,42 @@ function ArenaStats:UNIT_AURA(unit, isFullUpdate, updatedAuras)
     ArenaStats:ScanUnitBuffs(unit)
 end
 
-function ArenaStats:UNIT_SPELLCAST_START(event, unit, castGUID)
-    local spellName, _, _, _, _, _, _, _, spellID = CastingInfo(event)
+function ArenaStats:UNIT_SPELLCAST_START(_, unit, castGUID)
+    local spellName, _, _, _, _, _, _, _, spellID = CastingInfo(unit)
 
-    if event then
+    if unit then
         ArenaStats:ScanUnitBuffs(unit)
     end
 
-    if spellName then
-        if self.specSpells[spellID] and event then
-            local name = GetUnitName(unit, true)
+    if spellName and self.specSpells[spellID] and unit then
+        local name = GetUnitName(unit, true)
+        if name then
             self:OnSpecDetected(name, self.specSpells[spellID])
         end
     end
 end
 
-function ArenaStats:UNIT_SPELLCAST_CHANNEL_START(event, unit, castGuid, spellId)
-    if unit then 
+function ArenaStats:UNIT_SPELLCAST_CHANNEL_START(_, unit, castGuid, spellId)
+    if unit then
         ArenaStats:ScanUnitBuffs(unit)
     end
 
-    if spellId then
-        if self.specSpells[spellId] and unit then
-            local name = GetUnitName(unit, true)
+    if spellId and self.specSpells[spellId] and unit then
+        local name = GetUnitName(unit, true)
+        if name then
             self:OnSpecDetected(name, self.specSpells[spellId])
         end
     end
 end
 
-function ArenaStats:UNIT_SPELLCAST_SUCCEEDED(event, unit, castGuid, spellId)
+function ArenaStats:UNIT_SPELLCAST_SUCCEEDED(_, unit, castGuid, spellId)
     if unit then
         ArenaStats:ScanUnitBuffs(unit)
     end
 
-    if spellId then
-        if self.specSpells[spellId] and unit then
-            local name = GetUnitName(unit, true)
+    if spellId and self.specSpells[spellId] and unit then
+        local name = GetUnitName(unit, true)
+        if name then
             self:OnSpecDetected(name, self.specSpells[spellId])
         end
     end
@@ -236,23 +248,19 @@ function ArenaStats:SetLastArenaRankingData()
         enemyTeamTable = goldTeam
     end
 
+    -- Helper to convert race input to uppercase race token
+    local function convertRace(raceInput)
+        if not raceInput then return '' end
+        local race = LibRaces:GetRaceToken(raceInput)
+        return race and race:upper() or ''
+    end
+
     -- playerName, killingBlows, honorKills, deaths, honorGained, faction, rank, race, class, classToken, damageDone, healingDone
     for i = 1, #playerTeamTable do
         local row = playerTeamTable[i]
-        local raceUpper
+        local raceUpper = convertRace(row[8])
 
-        if not row[8] then
-            raceUpper = ''
-        else
-            local race = LibRaces:GetRaceToken(row[8])
-            if race == nil then
-                raceUpper = ''
-            else
-                raceUpper = race:upper()
-            end
-        end
-
-        self.current["stats"]["teamClass"][i - 1] = row[10]:upper()
+        self.current["stats"]["teamClass"][i - 1] = row[10] and row[10]:upper() or ''
         self.current["stats"]["teamCharName"][i - 1] = row[1]
         self.current["stats"]["teamRace"][i - 1] = raceUpper
         self.current["stats"]["teamSpec"][i - 1] = self:GetSpecOrDefault(row[1])
@@ -260,20 +268,9 @@ function ArenaStats:SetLastArenaRankingData()
 
     for i = 1, #enemyTeamTable do
         local row = enemyTeamTable[i]
-        local raceUpper
+        local raceUpper = convertRace(row[8])
 
-        if not row[8] then
-            raceUpper = ''
-        else
-            local race = LibRaces:GetRaceToken(row[8])
-            if race == nil then
-                raceUpper = ''
-            else
-                raceUpper = race:upper()
-            end
-        end
-
-        self.current["stats"]["enemyClass"][i - 1] = row[10]:upper()
+        self.current["stats"]["enemyClass"][i - 1] = row[10] and row[10]:upper() or ''
         self.current["stats"]["enemyName"][i - 1] = row[1]
         self.current["stats"]["enemyRace"][i - 1] = raceUpper
         self.current["stats"]["enemyFaction"] = self:RaceToFaction(raceUpper)
@@ -281,22 +278,14 @@ function ArenaStats:SetLastArenaRankingData()
     end
 end
 
+-- Alliance races lookup table
+local ALLIANCE_RACES = {
+    HUMAN = true, GNOME = true, NIGHTELF = true,
+    DRAENEI = true, DWARF = true, WORGEN = true
+}
+
 function ArenaStats:RaceToFaction(race)
-    if race == "HUMAN" then
-        return 1
-    elseif race == "GNOME" then
-        return 1
-    elseif race == "NIGHTELF" then
-        return 1
-    elseif race == "DRAENEI" then
-        return 1
-    elseif race == "DWARF" then
-        return 1
-    elseif race == "WORGEN" then
-        return 1
-    else
-        return 0
-    end
+    return ALLIANCE_RACES[race] and 1 or 0
 end
 
 function ArenaStats:UPDATE_BATTLEFIELD_SCORE()
@@ -518,8 +507,18 @@ function ArenaStats:ResetDatabase()
     self:Print(L["Database reset"])
 end
 
+-- Helper to safely get value or empty string
+local function safeVal(val)
+    return val ~= nil and val or ""
+end
+
+-- Helper to safely get indexed value from table
+local function safeIndexedVal(tbl, index)
+    return tbl and tbl[index] ~= nil and tbl[index] or ""
+end
+
 function ArenaStats:ExportCSV()
-    local csv =
+    local csvParts = {
         "isRanked,startTime,endTime,zoneId,duration,teamName,teamColor,winnerColor," ..
         "teamPlayerName1,teamPlayerName2,teamPlayerName3,teamPlayerName4,teamPlayerName5," ..
         "teamPlayerClass1,teamPlayerClass2,teamPlayerClass3,teamPlayerClass4,teamPlayerClass5," ..
@@ -528,118 +527,87 @@ function ArenaStats:ExportCSV()
         "enemyOldTeamRating,enemyNewTeamRating,enemyDiffRating,enemyMmr,enemyTeamName," ..
         "enemyPlayerName1,enemyPlayerName2,enemyPlayerName3,enemyPlayerName4,enemyPlayerName5," ..
         "enemyPlayerClass1,enemyPlayerClass2,enemyPlayerClass3,enemyPlayerClass4,enemyPlayerClass5," ..
-        "enemyPlayerRace1,enemyPlayerRace2,enemyPlayerRace3,enemyPlayerRace4,enemyPlayerRace5,enemyFaction,"..
+        "enemyPlayerRace1,enemyPlayerRace2,enemyPlayerRace3,enemyPlayerRace4,enemyPlayerRace5,enemyFaction," ..
         "enemySpec1,enemySpec2,enemySpec3,enemySpec4,enemySpec5," ..
-        "teamSpec1,teamSpec2,teamSpec3,teamSpec4,teamSpec5,"..
-        "\n"
+        "teamSpec1,teamSpec2,teamSpec3,teamSpec4,teamSpec5,\n"
+    }
 
     for _, row in ipairs(self.db.char.history) do
-        csv = csv .. (self:YesOrNo(row["isRanked"])) .. "," ..
-            (row["startTime"] ~= nil and row["startTime"] or "") .. "," ..
-            (row["endTime"] ~= nil and row["endTime"] or "") .. "," ..
-            (row["zoneId"] ~= nil and row["zoneId"] or "") .. "," ..
-            (row["startTime"] ~= nil and row["endTime"] ~= nil and
-                row["endTime"] - row["startTime"] or "") .. "," ..
-            (row["teamName"] ~= nil and row["teamName"] or "") .. "," ..
-            (row["teamColor"] ~= nil and row["teamColor"] or "") .. "," ..
-            (row["winnerColor"] ~= nil and row["winnerColor"] or "") ..
-            "," ..
-
-            (row["teamCharName"] and row["teamCharName"][0] ~= nil and
-                row["teamCharName"][0] or "") .. "," ..
-            (row["teamCharName"] and row["teamCharName"][1] ~= nil and
-                row["teamCharName"][1] or "") .. "," ..
-            (row["teamCharName"] and row["teamCharName"][2] ~= nil and
-                row["teamCharName"][2] or "") .. "," ..
-            (row["teamCharName"] and row["teamCharName"][3] ~= nil and
-                row["teamCharName"][3] or "") .. "," ..
-            (row["teamCharName"] and row["teamCharName"][4] ~= nil and
-                row["teamCharName"][4] or "") .. "," ..
-            (row["teamClass"] and row["teamClass"][0] ~= nil and
-                row["teamClass"][0] or "") .. "," ..
-            (row["teamClass"] and row["teamClass"][1] ~= nil and
-                row["teamClass"][1] or "") .. "," ..
-            (row["teamClass"] and row["teamClass"][2] ~= nil and
-                row["teamClass"][2] or "") .. "," ..
-            (row["teamClass"] and row["teamClass"][3] ~= nil and
-                row["teamClass"][3] or "") .. "," ..
-            (row["teamClass"] and row["teamClass"][4] ~= nil and
-                row["teamClass"][4] or "") .. "," ..
-            (row["teamRace"] and row["teamRace"][0] ~= nil and
-                row["teamRace"][0] or "") .. "," ..
-            (row["teamRace"] and row["teamRace"][1] ~= nil and
-                row["teamRace"][1] or "") .. "," ..
-            (row["teamRace"] and row["teamRace"][2] ~= nil and
-                row["teamRace"][2] or "") .. "," ..
-            (row["teamRace"] and row["teamRace"][3] ~= nil and
-                row["teamRace"][3] or "") .. "," ..
-            (row["teamRace"] and row["teamRace"][4] ~= nil and
-                row["teamRace"][4] or "") .. "," ..
-
-            (self:ComputeSafeNumber(row["oldTeamRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["newTeamRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["diffRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["mmr"])) .. "," ..
-
-            (self:ComputeSafeNumber(row["enemyOldTeamRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["enemyNewTeamRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["enemyDiffRating"])) .. "," ..
-            (self:ComputeSafeNumber(row["enemyMmr"])) .. "," ..
-            (row["enemyTeamName"] ~= nil and row["enemyTeamName"] or "") ..
-            "," ..
-
-            (row["enemyName"] and row["enemyName"][0] ~= nil and
-                row["enemyName"][0] or "") .. "," ..
-            (row["enemyName"] and row["enemyName"][1] ~= nil and
-                row["enemyName"][1] or "") .. "," ..
-            (row["enemyName"] and row["enemyName"][2] ~= nil and
-                row["enemyName"][2] or "") .. "," ..
-            (row["enemyName"] and row["enemyName"][3] ~= nil and
-                row["enemyName"][3] or "") .. "," ..
-            (row["enemyName"] and row["enemyName"][4] ~= nil and
-                row["enemyName"][4] or "") .. "," ..
-            (row["enemyClass"] and row["enemyClass"][0] ~= nil and
-                row["enemyClass"][0] or "") .. "," ..
-            (row["enemyClass"] and row["enemyClass"][1] ~= nil and
-                row["enemyClass"][1] or "") .. "," ..
-            (row["enemyClass"] and row["enemyClass"][2] ~= nil and
-                row["enemyClass"][2] or "") .. "," ..
-            (row["enemyClass"] and row["enemyClass"][3] ~= nil and
-                row["enemyClass"][3] or "") .. "," ..
-            (row["enemyClass"] and row["enemyClass"][4] ~= nil and
-                row["enemyClass"][4] or "") .. "," ..
-            (row["enemyRace"] and row["enemyRace"][0] ~= nil and
-                row["enemyRace"][0] or "") .. "," ..
-            (row["enemyRace"] and row["enemyRace"][1] ~= nil and
-                row["enemyRace"][1] or "") .. "," ..
-            (row["enemyRace"] and row["enemyRace"][2] ~= nil and
-                row["enemyRace"][2] or "") .. "," ..
-            (row["enemyRace"] and row["enemyRace"][3] ~= nil and
-                row["enemyRace"][3] or "") .. "," ..
-            (row["enemyRace"] and row["enemyRace"][4] ~= nil and
-                row["enemyRace"][4] or "") .. "," ..
-            (self:ComputeFaction(row["enemyFaction"])) .. "," ..
-            (row["teamSpec"] and row["teamSpec"][0] ~= nil and
-                row["teamSpec"][0] or "") .. "," ..
-            (row["teamSpec"] and row["teamSpec"][1] ~= nil and
-                row["teamSpec"][1] or "") .. "," ..
-            (row["teamSpec"] and row["teamSpec"][2] ~= nil and
-                row["teamSpec"][2] or "") .. "," ..
-            (row["teamSpec"] and row["teamSpec"][3] ~= nil and
-                row["teamSpec"][3] or "") .. "," ..
-            (row["teamSpec"] and row["teamSpec"][4] ~= nil and
-                row["teamSpec"][4] or "") .. "," ..
-            (row["enemySpec"] and row["enemySpec"][0] ~= nil and
-                row["enemySpec"][0] or "") .. "," ..
-            (row["enemySpec"] and row["enemySpec"][1] ~= nil and
-                row["enemySpec"][1] or "") .. "," ..
-            (row["enemySpec"] and row["enemySpec"][2] ~= nil and
-                row["enemySpec"][2] or "") .. "," ..
-            (row["enemySpec"] and row["enemySpec"][3] ~= nil and
-                row["enemySpec"][3] or "") .. "," ..
-            (row["enemySpec"] and row["enemySpec"][4] ~= nil and
-                row["enemySpec"][4] or "") .. "," .. "\n"
+        local duration = (row["startTime"] and row["endTime"]) and (row["endTime"] - row["startTime"]) or ""
+        local rowParts = {
+            self:YesOrNo(row["isRanked"]),
+            safeVal(row["startTime"]),
+            safeVal(row["endTime"]),
+            safeVal(row["zoneId"]),
+            duration,
+            safeVal(row["teamName"]),
+            safeVal(row["teamColor"]),
+            safeVal(row["winnerColor"]),
+            -- Team player names
+            safeIndexedVal(row["teamCharName"], 0),
+            safeIndexedVal(row["teamCharName"], 1),
+            safeIndexedVal(row["teamCharName"], 2),
+            safeIndexedVal(row["teamCharName"], 3),
+            safeIndexedVal(row["teamCharName"], 4),
+            -- Team player classes
+            safeIndexedVal(row["teamClass"], 0),
+            safeIndexedVal(row["teamClass"], 1),
+            safeIndexedVal(row["teamClass"], 2),
+            safeIndexedVal(row["teamClass"], 3),
+            safeIndexedVal(row["teamClass"], 4),
+            -- Team player races
+            safeIndexedVal(row["teamRace"], 0),
+            safeIndexedVal(row["teamRace"], 1),
+            safeIndexedVal(row["teamRace"], 2),
+            safeIndexedVal(row["teamRace"], 3),
+            safeIndexedVal(row["teamRace"], 4),
+            -- Team ratings
+            self:ComputeSafeNumber(row["oldTeamRating"]),
+            self:ComputeSafeNumber(row["newTeamRating"]),
+            self:ComputeSafeNumber(row["diffRating"]),
+            self:ComputeSafeNumber(row["mmr"]),
+            -- Enemy ratings
+            self:ComputeSafeNumber(row["enemyOldTeamRating"]),
+            self:ComputeSafeNumber(row["enemyNewTeamRating"]),
+            self:ComputeSafeNumber(row["enemyDiffRating"]),
+            self:ComputeSafeNumber(row["enemyMmr"]),
+            safeVal(row["enemyTeamName"]),
+            -- Enemy player names
+            safeIndexedVal(row["enemyName"], 0),
+            safeIndexedVal(row["enemyName"], 1),
+            safeIndexedVal(row["enemyName"], 2),
+            safeIndexedVal(row["enemyName"], 3),
+            safeIndexedVal(row["enemyName"], 4),
+            -- Enemy player classes
+            safeIndexedVal(row["enemyClass"], 0),
+            safeIndexedVal(row["enemyClass"], 1),
+            safeIndexedVal(row["enemyClass"], 2),
+            safeIndexedVal(row["enemyClass"], 3),
+            safeIndexedVal(row["enemyClass"], 4),
+            -- Enemy player races
+            safeIndexedVal(row["enemyRace"], 0),
+            safeIndexedVal(row["enemyRace"], 1),
+            safeIndexedVal(row["enemyRace"], 2),
+            safeIndexedVal(row["enemyRace"], 3),
+            safeIndexedVal(row["enemyRace"], 4),
+            self:ComputeFaction(row["enemyFaction"]),
+            -- Team specs
+            safeIndexedVal(row["teamSpec"], 0),
+            safeIndexedVal(row["teamSpec"], 1),
+            safeIndexedVal(row["teamSpec"], 2),
+            safeIndexedVal(row["teamSpec"], 3),
+            safeIndexedVal(row["teamSpec"], 4),
+            -- Enemy specs
+            safeIndexedVal(row["enemySpec"], 0),
+            safeIndexedVal(row["enemySpec"], 1),
+            safeIndexedVal(row["enemySpec"], 2),
+            safeIndexedVal(row["enemySpec"], 3),
+            safeIndexedVal(row["enemySpec"], 4),
+        }
+        csvParts[#csvParts + 1] = table.concat(rowParts, ",") .. ",\n"
     end
+
+    local csv = table.concat(csvParts)
     ArenaStats:ExportFrame().eb:SetText(csv)
     ArenaStats:ExportFrame():SetTitle(L["Export"])
     ArenaStats:ExportFrame().eb:SetNumLines(29)
