@@ -1,0 +1,6 @@
+package-as: ArenaStats
+
+ignore:
+  - README.md
+  - .github
+  - .gitignore

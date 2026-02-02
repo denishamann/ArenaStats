@@ -42,3 +42,6 @@ luac.out
 # Auto-formatter config
 .luaconfig
 
+# Serena MCP
+.serena
+
