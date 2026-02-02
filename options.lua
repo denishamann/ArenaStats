@@ -8,7 +8,7 @@ local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 function ArenaStats:RegisterOptionsTable()
     AceConfig:RegisterOptionsTable(addonName, {
-        name = addonName,
+        name = "ArenaStats-TBC",
         descStyle = "inline",
         handler = ArenaStats,
         type = "group",
@@ -55,6 +55,16 @@ function ArenaStats:RegisterOptionsTable()
                                 confirm = true,
                                 func = function()
                                     self:ResetDatabase()
+                                    self:ReloadData()
+                                end
+                            },
+                            testData = {
+                                order = 20,
+                                type = "execute",
+                                name = L["Generate Test Data"],
+                                desc = L["Generates a dummy arena record for testing purposes"],
+                                func = function()
+                                    self:TestData()
                                 end
                             }
                         }

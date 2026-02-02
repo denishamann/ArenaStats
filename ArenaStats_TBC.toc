@@ -1,5 +1,5 @@
 ## Interface: 20505
-## Title: ArenaStats
+## Title: ArenaStats-TBC
 ## Notes: Arena history and statistics with csv export
 ## Author: Kallias-Sulfuron
 ## Version: 0.3.0
@@ -11,6 +11,7 @@ locales.xml
 ArenaStats.lua
 Compat.lua
 GUI.lua
+MatchDetails.lua
 HybridScrollFrame.xml
 options.lua
 Constants_TBC.lua
