@@ -1,6 +1,6 @@
 local _G = _G
 local addonName = "ArenaStats"
-local addonTitle = select(2, _G.GetAddOnInfo(addonName))
+local addonTitle = select(2, C_AddOns.GetAddOnInfo(addonName))
 local ArenaStats = _G.LibStub("AceAddon-3.0"):GetAddon(addonName)
 local L = _G.LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 local AceGUI = _G.LibStub("AceGUI-3.0")
@@ -8,6 +8,12 @@ local sbyte = _G.string.byte
 
 local filters, asGui
 local rows, filtered
+
+-- Reusable tables to avoid garbage collection pressure during scroll refresh
+local reusableTeamClassSpec = {{}, {}, {}, {}, {}}
+local reusableEnemyClassSpec = {{}, {}, {}, {}, {}}
+local reusableTeamPlayerNames = {}
+local reusableEnemyPlayerNames = {}
 
 function ArenaStats:CSize(char)
     if not char then
@@ -27,13 +33,13 @@ function ArenaStats:StrSub(str, startChar, numChars)
     local startIndex = 1
     while startChar > 1 do
         local char = sbyte(str, startIndex)
-        startIndex = startIndex + ArenaStats:CSize(char)
+        startIndex = startIndex + self:CSize(char)
         startChar = startChar - 1
     end
     local currentIndex = startIndex
     while numChars > 0 and currentIndex <= #str do
         local char = sbyte(str, currentIndex)
-        currentIndex = currentIndex + ArenaStats:CSize(char)
+        currentIndex = currentIndex + self:CSize(char)
         numChars = numChars - 1
     end
     return str:sub(startIndex, currentIndex - 1)
@@ -43,7 +49,7 @@ function ArenaStats:CreateShortMapName(mapName)
     local mapNameTemp = {strsplit(" ", mapName)}
     local mapShortName = ""
     for i = 1, #mapNameTemp do
-        mapShortName = mapShortName .. ArenaStats:StrSub(mapNameTemp[i], 0, 1)
+        mapShortName = mapShortName .. self:StrSub(mapNameTemp[i], 0, 1)
     end
     return mapShortName
 end
@@ -135,15 +141,15 @@ function ArenaStats:CreateGUI()
     margin:SetWidth(4)
     tableHeader:AddChild(margin)
 
-    ArenaStats:CreateScoreButton(tableHeader, 145, "Date")
-    ArenaStats:CreateScoreButton(tableHeader, 40, "Map")
-    ArenaStats:CreateScoreButton(tableHeader, 94, "Duration")
-    ArenaStats:CreateScoreButton(tableHeader, 100, "Team")
-    ArenaStats:CreateScoreButton(tableHeader, 64, "Rating")
-    ArenaStats:CreateScoreButton(tableHeader, 40, "MMR")
-    ArenaStats:CreateScoreButton(tableHeader, 100, "Enemy Team")
-    ArenaStats:CreateScoreButton(tableHeader, 75, "Enemy MMR")
-    ArenaStats:CreateScoreButton(tableHeader, 80, "Enemy Faction")
+    self:CreateScoreButton(tableHeader, 145, "Date")
+    self:CreateScoreButton(tableHeader, 40, "Map")
+    self:CreateScoreButton(tableHeader, 94, "Duration")
+    self:CreateScoreButton(tableHeader, 100, "Team")
+    self:CreateScoreButton(tableHeader, 64, "Rating")
+    self:CreateScoreButton(tableHeader, 40, "MMR")
+    self:CreateScoreButton(tableHeader, 100, "Enemy Team")
+    self:CreateScoreButton(tableHeader, 75, "Enemy MMR")
+    self:CreateScoreButton(tableHeader, 80, "Enemy Faction")
 
     -- TABLE
     local scrollContainer = AceGUI:Create("SimpleGroup")
@@ -276,6 +282,24 @@ function ArenaStats:IsHealerSpec(spec)
     return spec == "Restoration" or spec == "Discipline" or spec == "Holy"
 end
 
+-- Helper to populate reusable class/spec table
+local function populateClassSpecTable(tbl, row, prefix)
+    for i = 1, 5 do
+        tbl[i].class = row[prefix .. "Class" .. i]
+        tbl[i].spec = row[prefix .. "Spec" .. i]
+    end
+end
+
+-- Helper to check if any enemies exist in the class/spec table
+local function hasAnyClassOrSpec(tbl)
+    for i = 1, 5 do
+        if tbl[i].class or tbl[i].spec then
+            return true
+        end
+    end
+    return false
+end
+
 function ArenaStats:RefreshLayout()
     local buttons = _G.HybridScrollFrame_GetButtons(asGui.scrollFrame)
     local offset = _G.HybridScrollFrame_GetOffset(asGui.scrollFrame)
@@ -289,55 +313,46 @@ function ArenaStats:RefreshLayout()
 
         if (itemIndex <= #filtered) then
             button:SetID(itemIndex)
-            button.Date:SetText(_G.date(L["%F %T"], row["endTime"]))
+            
+            -- Nil protection for date display
+            if row["endTime"] then
+                button.Date:SetText(_G.date(L["%F %T"], row["endTime"]))
+            else
+                button.Date:SetText("-")
+            end
+            
             button.Map:SetText(self:GetShortMapName(row["zoneId"]))
             button.Duration:SetText(self:HumanDuration(row["duration"]))
-            local teamClasses = {
-                row["teamPlayerClass1"], row["teamPlayerClass2"],
-                row["teamPlayerClass3"], row["teamPlayerClass4"],
-                row["teamPlayerClass5"]
-            }
+            
+            -- Reuse team class/spec table instead of creating new ones
+            populateClassSpecTable(reusableTeamClassSpec, row, "teamPlayer")
 
-            local teamSpecs = {
-                row["teamPlayerSpec1"], row["teamPlayerSpec2"],
-                row["teamPlayerSpec3"], row["teamPlayerSpec4"],
-                row["teamPlayerSpec5"]
-            }
-
-            local teamClassSpec = {
-                { class = teamClasses[1], spec = teamSpecs[1] },
-                { class = teamClasses[2], spec = teamSpecs[2] },
-                { class = teamClasses[3], spec = teamSpecs[3] },
-                { class = teamClasses[4], spec = teamSpecs[4] },
-                { class = teamClasses[5], spec = teamSpecs[5] }
-            }
-
-            table.sort(teamClassSpec, function(a, b)
+            table.sort(reusableTeamClassSpec, function(a, b)
                 return self:SortClassSpecTable(a, b)
             end)
 
-            local teamPlayerNames = {
-                row["teamPlayerName1"], row["teamPlayerName2"],
-                row["teamPlayerName3"], row["teamPlayerName4"],
-                row["teamPlayerName5"]
-            }
-            local enemyPlayerNames = {
-                row["enemyPlayerName1"], row["enemyPlayerName2"],
-                row["enemyPlayerName3"], row["enemyPlayerName4"],
-                row["enemyPlayerName5"]
-            }
+            -- Populate reusable name tables for tooltip
+            for i = 1, 5 do
+                reusableTeamPlayerNames[i] = row["teamPlayerName" .. i]
+                reusableEnemyPlayerNames[i] = row["enemyPlayerName" .. i]
+            end
+            
+            -- Capture current names for this button's tooltip (needed for closure)
+            local tooltipTeamNames = {unpack(reusableTeamPlayerNames)}
+            local tooltipEnemyNames = {unpack(reusableEnemyPlayerNames)}
+            
             button:SetScript("OnEnter", function(self)
-                ArenaStats:ShowTooltip(self, teamPlayerNames, enemyPlayerNames)
+                ArenaStats:ShowTooltip(self, tooltipTeamNames, tooltipEnemyNames)
             end)
             button:SetScript("OnLeave", function()
                 ArenaStats:HideTooltip()
             end)
 
-            button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(teamClassSpec[1]))
-            button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(teamClassSpec[2]))
-            button.IconTeamPlayerClass3:SetTexture(self:ClassIconId(teamClassSpec[3]))
-            button.IconTeamPlayerClass4:SetTexture(self:ClassIconId(teamClassSpec[4]))
-            button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(teamClassSpec[5]))
+            button.IconTeamPlayerClass1:SetTexture(self:ClassIconId(reusableTeamClassSpec[1]))
+            button.IconTeamPlayerClass2:SetTexture(self:ClassIconId(reusableTeamClassSpec[2]))
+            button.IconTeamPlayerClass3:SetTexture(self:ClassIconId(reusableTeamClassSpec[3]))
+            button.IconTeamPlayerClass4:SetTexture(self:ClassIconId(reusableTeamClassSpec[4]))
+            button.IconTeamPlayerClass5:SetTexture(self:ClassIconId(reusableTeamClassSpec[5]))
 
             button.Rating:SetText((row["newTeamRating"] or "-") .. " (" ..
                                       ((row["diffRating"] and row["diffRating"] >
@@ -355,45 +370,21 @@ function ArenaStats:RefreshLayout()
             end
             button.MMR:SetText(row["mmr"] or "-")
 
-            local enemyClasses = {
-                row["enemyPlayerClass1"], row["enemyPlayerClass2"],
-                row["enemyPlayerClass3"], row["enemyPlayerClass4"],
-                row["enemyPlayerClass5"]
-            }
+            -- Reuse enemy class/spec table instead of creating new ones
+            populateClassSpecTable(reusableEnemyClassSpec, row, "enemyPlayer")
 
-            local enemySpecs = {
-                row["enemyPlayerSpec1"], row["enemyPlayerSpec2"],
-                row["enemyPlayerSpec3"], row["enemyPlayerSpec4"],
-                row["enemyPlayerSpec5"]
-            }
-
-            local enemyClassSpec = {
-                { class = enemyClasses[1], spec = enemySpecs[1] },
-                { class = enemyClasses[2], spec = enemySpecs[2] },
-                { class = enemyClasses[3], spec = enemySpecs[3] },
-                { class = enemyClasses[4], spec = enemySpecs[4] },
-                { class = enemyClasses[5], spec = enemySpecs[5] }
-            }
-
-            -- don't sort if match ends immediately due to no enemies (otherwise gui crashes)
-            local enemiesExist = false
-            for _, v in pairs(enemyClassSpec) do
-                if v.class or v.spec then
-                    enemiesExist = true
-                end
-            end
-
-            if enemiesExist then
-                table.sort(enemyClassSpec, function(a, b)
+            -- Don't sort if match ends immediately due to no enemies (otherwise gui crashes)
+            if hasAnyClassOrSpec(reusableEnemyClassSpec) then
+                table.sort(reusableEnemyClassSpec, function(a, b)
                     return self:SortClassSpecTable(a, b)
                 end)
             end
 
-            button.IconEnemyPlayer1:SetTexture(self:ClassIconId(enemyClassSpec[1]))
-            button.IconEnemyPlayer2:SetTexture(self:ClassIconId(enemyClassSpec[2]))
-            button.IconEnemyPlayer3:SetTexture(self:ClassIconId(enemyClassSpec[3]))
-            button.IconEnemyPlayer4:SetTexture(self:ClassIconId(enemyClassSpec[4]))
-            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(enemyClassSpec[5]))
+            button.IconEnemyPlayer1:SetTexture(self:ClassIconId(reusableEnemyClassSpec[1]))
+            button.IconEnemyPlayer2:SetTexture(self:ClassIconId(reusableEnemyClassSpec[2]))
+            button.IconEnemyPlayer3:SetTexture(self:ClassIconId(reusableEnemyClassSpec[3]))
+            button.IconEnemyPlayer4:SetTexture(self:ClassIconId(reusableEnemyClassSpec[4]))
+            button.IconEnemyPlayer5:SetTexture(self:ClassIconId(reusableEnemyClassSpec[5]))
 
             button.EnemyMMR:SetText(row["enemyMmr"] or "-")
 
@@ -417,7 +408,7 @@ end
 function ArenaStats:Show()
     if not _G.AsFrame then self:CreateGUI() end
 
-    rows = ArenaStats:BuildTable()
+    rows = self:BuildTable()
 
     self:SortTable()
     self:RefreshLayout()
@@ -500,7 +491,7 @@ function ArenaStats:ClassIconId(classSpec)
     end
 
     local spec = classSpec.spec
-    if self.db.profile.showSpec.hide or not spec then
+    if not self.db.profile.showSpec or not spec then
         return classIcons.default
     end
 
@@ -549,7 +540,7 @@ function ArenaStats:ShowTooltip(owner, teamPlayerNames, enemyPlayerNames)
     for i, name in ipairs(enemyPlayerNames) do
         AceGUI.tooltip:AddLine(name, 1, 0, 0)
     end
-    if (ArenaStats:ShouldHideCharacterNamesTooltips()) then
+    if self:ShouldShowCharacterNamesTooltips() then
         AceGUI.tooltip:Show()
     end
 end

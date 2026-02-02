@@ -19,10 +19,10 @@ local UnitName, UnitRace, UnitClass, UnitGUID, UnitFactionGroup, UnitIsPlayer =
 function ArenaStats:OnInitialize()
     self.db = _G.LibStub("AceDB-3.0"):New(addonName, {
         profile = {
-            minimapButton = {hide = false},
+            minimapButton = {hide = false}, -- Note: LibDBIcon requires this format
             maxHistory = 0,
-            characterNamesOnHover = {hide = false},
-            showSpec = { hide = false }
+            showCharacterNamesOnHover = true,
+            showSpec = true
         },
         char = {history = {}}
     })
@@ -46,6 +46,11 @@ function ArenaStats:OnInitialize()
     self.specTable = {}
     self.arenaEnded = false
     self.current = { status = "none", stats = {}, units = {} }
+    
+    -- Cache for BuildTable to avoid rebuilding on every GUI refresh
+    self.tableCache = nil
+    self.tableCacheSize = 0
+    
     self:Reset()
 end
 
@@ -95,22 +100,22 @@ function ArenaStats:ScanUnitBuffs(unit)
     end
 end
 
-function ArenaStats:ARENA_OPPONENT_UPDATE(unit, updateReason)
+function ArenaStats:ARENA_OPPONENT_UPDATE(_, unit, updateReason)
     self:ScanUnitBuffs(unit)
 end
 
-function ArenaStats:UNIT_AURA(unit, isFullUpdate, updatedAuras)
-    ArenaStats:ScanUnitBuffs(unit)
+function ArenaStats:UNIT_AURA(_, unit, isFullUpdate, updatedAuras)
+    self:ScanUnitBuffs(unit)
 end
 
-function ArenaStats:UNIT_SPELLCAST_START(_, unit, castGUID)
-    local spellName, _, _, _, _, _, _, _, spellID = CastingInfo(unit)
+function ArenaStats:UNIT_SPELLCAST_START(_, unit, castGUID, spellID)
+    local spellName = spellID and GetSpellInfo(spellID) or nil
 
     if unit then
-        ArenaStats:ScanUnitBuffs(unit)
+        self:ScanUnitBuffs(unit)
     end
 
-    if spellName and self.specSpells[spellID] and unit then
+    if spellID and self.specSpells[spellID] and unit then
         local name = GetUnitName(unit, true)
         if name then
             self:OnSpecDetected(name, self.specSpells[spellID])
@@ -120,7 +125,7 @@ end
 
 function ArenaStats:UNIT_SPELLCAST_CHANNEL_START(_, unit, castGuid, spellId)
     if unit then
-        ArenaStats:ScanUnitBuffs(unit)
+        self:ScanUnitBuffs(unit)
     end
 
     if spellId and self.specSpells[spellId] and unit then
@@ -133,7 +138,7 @@ end
 
 function ArenaStats:UNIT_SPELLCAST_SUCCEEDED(_, unit, castGuid, spellId)
     if unit then
-        ArenaStats:ScanUnitBuffs(unit)
+        self:ScanUnitBuffs(unit)
     end
 
     if spellId and self.specSpells[spellId] and unit then
@@ -181,6 +186,16 @@ function ArenaStats:GetSpecOrDefault(unitName)
     return "Unknown"
 end
 
+--- Collects and stores all arena ranking data at the end of a match.
+--- This function is called when the battlefield score is updated and a winner is determined.
+---
+--- The function performs three main tasks:
+--- 1. Identifies which team (GREEN=0 or GOLD=1) the player belongs to by scanning scores
+--- 2. Retrieves team ratings and MMR for both teams from GetBattlefieldTeamInfo
+--- 3. Collects individual player data (class, name, race, spec) for both teams
+---
+--- Data is stored in self.current["stats"] with 0-based indexing for player arrays
+--- to maintain compatibility with the existing data format.
 function ArenaStats:SetLastArenaRankingData()
     local playerTeam = ''
     local greenTeam = {}
@@ -188,17 +203,18 @@ function ArenaStats:SetLastArenaRankingData()
     local myName = UnitName("player")
     local numScores = GetNumBattlefieldScores()
 
+    -- Step 1: Scan all players to determine which team we're on and group players by team
+    -- GREEN team has teamIndex=0, GOLD team has teamIndex=1
     for i = 1, numScores do
         local data = { GetBattlefieldScore(i) }
         local teamIndex = data[6]
+        
+        -- Check if this player is us to determine our team color
         if data[1] == myName then
-            if teamIndex == 0 then
-                playerTeam = 'GREEN'
-            else
-                playerTeam = 'GOLD'
-            end
+            playerTeam = (teamIndex == 0) and 'GREEN' or 'GOLD'
         end
 
+        -- Group players into their respective teams
         if teamIndex == 0 then
             table.insert(greenTeam, data)
         else
@@ -208,29 +224,31 @@ function ArenaStats:SetLastArenaRankingData()
 
     self.current["stats"]["teamColor"] = playerTeam
 
+    -- Step 2: Get team ratings and MMR from both teams
+    -- Team index 0 = GREEN, Team index 1 = GOLD
     for i = 0, 1 do
         local teamName, oldTeamRating, newTeamRating, teamMMR =
             GetBattlefieldTeamInfo(i)
         if teamMMR > 0 then
-            if ((i == 0 and playerTeam == 'GREEN') or
-                    (i == 1 and playerTeam == 'GOLD')) then
+            local isPlayerTeam = (i == 0 and playerTeam == 'GREEN') or
+                                 (i == 1 and playerTeam == 'GOLD')
+            if isPlayerTeam then
                 self.current["stats"]["teamName"] = teamName
                 self.current["stats"]["oldTeamRating"] = oldTeamRating
                 self.current["stats"]["newTeamRating"] = newTeamRating
-                self.current["stats"]["diffRating"] = newTeamRating -
-                    oldTeamRating
+                self.current["stats"]["diffRating"] = newTeamRating - oldTeamRating
                 self.current["stats"]["mmr"] = teamMMR
             else
                 self.current["stats"]["enemyTeamName"] = teamName
                 self.current["stats"]["enemyOldTeamRating"] = oldTeamRating
                 self.current["stats"]["enemyNewTeamRating"] = newTeamRating
-                self.current["stats"]["enemyDiffRating"] = newTeamRating -
-                    oldTeamRating
+                self.current["stats"]["enemyDiffRating"] = newTeamRating - oldTeamRating
                 self.current["stats"]["enemyMmr"] = teamMMR
             end
         end
     end
 
+    -- Step 3: Initialize player data arrays and collect individual player info
     self.current["stats"]["teamClass"] = {}
     self.current["stats"]["teamCharName"] = {}
     self.current["stats"]["teamRace"] = {}
@@ -241,40 +259,44 @@ function ArenaStats:SetLastArenaRankingData()
     self.current["stats"]["enemyRace"] = {}
     self.current["stats"]["enemySpec"] = {}
 
-    local playerTeamTable = goldTeam
-    local enemyTeamTable = greenTeam
-    if (playerTeam == 'GREEN') then
-        playerTeamTable = greenTeam
-        enemyTeamTable = goldTeam
-    end
+    -- Determine which raw data table corresponds to player's team vs enemy team
+    local playerTeamTable = (playerTeam == 'GREEN') and greenTeam or goldTeam
+    local enemyTeamTable = (playerTeam == 'GREEN') and goldTeam or greenTeam
 
-    -- Helper to convert race input to uppercase race token
+    -- Helper to convert localized race name to uppercase race token
     local function convertRace(raceInput)
         if not raceInput then return '' end
         local race = LibRaces:GetRaceToken(raceInput)
         return race and race:upper() or ''
     end
 
-    -- playerName, killingBlows, honorKills, deaths, honorGained, faction, rank, race, class, classToken, damageDone, healingDone
+    -- GetBattlefieldScore returns:
+    -- [1]=playerName, [2]=killingBlows, [3]=honorKills, [4]=deaths, [5]=honorGained,
+    -- [6]=faction, [7]=rank, [8]=race, [9]=class, [10]=classToken, [11]=damageDone, [12]=healingDone
+    
+    -- Collect player's team data (0-based indexing for storage)
     for i = 1, #playerTeamTable do
         local row = playerTeamTable[i]
         local raceUpper = convertRace(row[8])
+        local idx = i - 1  -- Convert to 0-based index
 
-        self.current["stats"]["teamClass"][i - 1] = row[10] and row[10]:upper() or ''
-        self.current["stats"]["teamCharName"][i - 1] = row[1]
-        self.current["stats"]["teamRace"][i - 1] = raceUpper
-        self.current["stats"]["teamSpec"][i - 1] = self:GetSpecOrDefault(row[1])
+        self.current["stats"]["teamClass"][idx] = row[10] and row[10]:upper() or ''
+        self.current["stats"]["teamCharName"][idx] = row[1]
+        self.current["stats"]["teamRace"][idx] = raceUpper
+        self.current["stats"]["teamSpec"][idx] = self:GetSpecOrDefault(row[1])
     end
 
+    -- Collect enemy team data (0-based indexing for storage)
     for i = 1, #enemyTeamTable do
         local row = enemyTeamTable[i]
         local raceUpper = convertRace(row[8])
+        local idx = i - 1  -- Convert to 0-based index
 
-        self.current["stats"]["enemyClass"][i - 1] = row[10] and row[10]:upper() or ''
-        self.current["stats"]["enemyName"][i - 1] = row[1]
-        self.current["stats"]["enemyRace"][i - 1] = raceUpper
+        self.current["stats"]["enemyClass"][idx] = row[10] and row[10]:upper() or ''
+        self.current["stats"]["enemyName"][idx] = row[1]
+        self.current["stats"]["enemyRace"][idx] = raceUpper
         self.current["stats"]["enemyFaction"] = self:RaceToFaction(raceUpper)
-        self.current["stats"]["enemySpec"][i - 1] = self:GetSpecOrDefault(row[1])
+        self.current["stats"]["enemySpec"][idx] = self:GetSpecOrDefault(row[1])
     end
 end
 
@@ -327,6 +349,8 @@ function ArenaStats:AddEntryToHistory(stats)
             table.remove(self.db.char.history, 1)
         end
     end
+    -- Invalidate BuildTable cache since history changed
+    self.tableCache = nil
 end
 
 function ArenaStats:DrawMinimapIcon()
@@ -378,10 +402,20 @@ function ArenaStats:CalculateTeamSize(row)
     return teamSize
 end
 
+--- Builds a display-ready table from the history database.
+--- Transforms the raw storage format (0-based indexed arrays) into a flat structure
+--- with named fields (e.g., teamPlayerClass1, teamPlayerClass2, etc.) for easier GUI rendering.
+--- Uses caching to avoid rebuilding when the history hasn't changed.
+--- @return table[] Array of arena match records, sorted from newest to oldest
 function ArenaStats:BuildTable()
-    local tbl = {}
-
     local tableLength = #self.db.char.history
+    
+    -- Return cached table if history size hasn't changed
+    if self.tableCache and self.tableCacheSize == tableLength then
+        return self.tableCache
+    end
+    
+    local tbl = {}
 
     for i = 1, tableLength do
         local row = self.db.char.history[tableLength + 1 - i]
@@ -391,9 +425,9 @@ function ArenaStats:BuildTable()
 
             ["startTime"] = row["startTime"],
             ["endTime"] = row["endTime"],
-            ["zoneId"] = ArenaStats:RemapZoneId(row["zoneId"]),
+            ["zoneId"] = self:RemapZoneId(row["zoneId"]),
             ["isRanked"] = row["isRanked"],
-            ["teamSize"] = ArenaStats:CalculateTeamSize(row),
+            ["teamSize"] = self:CalculateTeamSize(row),
             ["duration"] = (row["endTime"] and row["startTime"] and
                 (row["endTime"] - row["startTime"]) or 0),
 
@@ -487,6 +521,11 @@ function ArenaStats:BuildTable()
 
         })
     end
+    
+    -- Store in cache for subsequent calls
+    self.tableCache = tbl
+    self.tableCacheSize = tableLength
+    
     return tbl
 end
 
@@ -504,6 +543,8 @@ end
 
 function ArenaStats:ResetDatabase()
     self.db:ResetDB()
+    -- Invalidate BuildTable cache since database was reset
+    self.tableCache = nil
     self:Print(L["Database reset"])
 end
 
@@ -656,6 +697,6 @@ function ArenaStats:ComputeSafeNumber(number)
     return number
 end
 
-function ArenaStats:ShouldHideCharacterNamesTooltips()
-    return not self.db.profile.characterNamesOnHover.hide
+function ArenaStats:ShouldShowCharacterNamesTooltips()
+    return self.db.profile.showCharacterNamesOnHover
 end

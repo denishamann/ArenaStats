@@ -1,5 +1,5 @@
 local addonName = "ArenaStats"
-local _, addonTitle, addonNotes = GetAddOnInfo(addonName)
+local _, addonTitle, addonNotes = C_AddOns.GetAddOnInfo(addonName)
 local ArenaStats = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 local AceConfig = LibStub("AceConfig-3.0")
@@ -83,18 +83,15 @@ function ArenaStats:RegisterOptionsTable()
                         name = L["Interface Settings"],
                         inline = true,
                         args = {
-                            characterNamesOnHover = {
+                            showCharacterNamesOnHover = {
                                 order = 31,
                                 type = "toggle",
                                 name = L["Show character names on hover"],
                                 get = function()
-                                    return not self.db.profile
-                                        .characterNamesOnHover.hide
+                                    return self.db.profile.showCharacterNamesOnHover
                                 end,
-                                set = function()
-                                    self.db.profile.characterNamesOnHover.hide =
-                                        not self.db.profile
-                                        .characterNamesOnHover.hide
+                                set = function(_, val)
+                                    self.db.profile.showCharacterNamesOnHover = val
                                 end
                             }
                         }
@@ -110,11 +107,10 @@ function ArenaStats:RegisterOptionsTable()
                                 type = "toggle",
                                 name = L["Show specialization"],
                                 get = function()
-                                    return not self.db.profile.showSpec.hide
+                                    return self.db.profile.showSpec
                                 end,
-                                set = function()
-                                    self.db.profile.showSpec.hide =
-                                        not self.db.profile.showSpec.hide
+                                set = function(_, val)
+                                    self.db.profile.showSpec = val
                                 end
                             }
                         }
