@@ -40,8 +40,8 @@
 -- end
 -- @class file
 -- @name AceDB-3.0.lua
--- @release $Id: AceDB-3.0.lua 1217 2019-07-11 03:06:18Z funkydude $
-local ACEDB_MAJOR, ACEDB_MINOR = "AceDB-3.0", 27
+-- @release $Id: AceDB-3.0.lua 1364 2025-07-05 16:01:08Z nevcairiel $
+local ACEDB_MAJOR, ACEDB_MINOR = "AceDB-3.0", 33
 local AceDB = LibStub:NewLibrary(ACEDB_MAJOR, ACEDB_MINOR)
 
 if not AceDB then return end -- No upgrade needed
@@ -52,10 +52,6 @@ local setmetatable, rawset, rawget = setmetatable, rawset, rawget
 
 -- WoW APIs
 local _G = _G
-
--- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
--- List them here for Mikk's FindGlobals script
--- GLOBALS: LibStub
 
 AceDB.db_registry = AceDB.db_registry or {}
 AceDB.frame = AceDB.frame or CreateFrame("Frame")
@@ -98,11 +94,11 @@ local function copyDefaults(dest, src)
 				-- This is a metatable used for table defaults
 				local mt = {
 					-- This handles the lookup and creation of new subtables
-					__index = function(t,k)
-							if k == nil then return nil end
+					__index = function(t,k2)
+							if k2 == nil then return nil end
 							local tbl = {}
 							copyDefaults(tbl, v)
-							rawset(t, k, tbl)
+							rawset(t, k2, tbl)
 							return tbl
 						end,
 				}
@@ -115,7 +111,7 @@ local function copyDefaults(dest, src)
 				end
 			else
 				-- Values are not tables, so this is just a simple return
-				local mt = {__index = function(t,k) return k~=nil and v or nil end}
+				local mt = {__index = function(t,k2) return k2~=nil and v or nil end}
 				setmetatable(dest, mt)
 			end
 		elseif type(v) == "table" then
@@ -264,7 +260,7 @@ local factionrealmKey = factionKey .. " - " .. realmKey
 local localeKey = GetLocale():lower()
 
 local regionTable = { "US", "KR", "EU", "TW", "CN" }
-local regionKey = regionTable[GetCurrentRegion()]
+local regionKey = regionTable[GetCurrentRegion()] or GetCurrentRegionName() or "TR"
 local factionrealmregionKey = factionrealmKey .. " - " .. regionKey
 
 -- Actual database initialization function
@@ -364,7 +360,7 @@ local function logoutHandler(frame, event)
 
 			-- cleanup sections that are empty without defaults
 			local sv = rawget(db, "sv")
-			for section in pairs(db.keys) do
+			for section in pairs(rawget(db, "keys")) do
 				if rawget(sv, section) then
 					-- global is special, all other sections have sub-entrys
 					-- also don't delete empty profiles on main dbs, only on namespaces
@@ -377,6 +373,26 @@ local function logoutHandler(frame, event)
 					end
 					if not next(sv[section]) then
 						sv[section] = nil
+					end
+				end
+			end
+		end
+
+		-- second pass after everything else is cleaned up to remove empty namespaces
+		-- can't be run in-loop above since there is no guaranteed order
+		for db in pairs(AceDB.db_registry) do
+			local sv = rawget(db, "sv")
+			local namespaces = rawget(sv, "namespaces")
+			if namespaces then
+				for name in pairs(namespaces) do
+					-- cleanout empty profiles table, if still present
+					if namespaces[name].profiles and not next(namespaces[name].profiles) then
+						namespaces[name].profiles = nil
+					end
+
+					-- remove entire namespace, if needed
+					if not next(namespaces[name]) then
+						namespaces[name] = nil
 					end
 				end
 			end
@@ -529,6 +545,17 @@ function DBObjectLib:DeleteProfile(name, silent)
 		end
 	end
 
+	-- remove from unloaded namespaces
+	if self.sv.namespaces then
+		for nsname, data in pairs(self.sv.namespaces) do
+			if self.children and self.children[nsname] then
+				-- already a mapped namespace
+			elseif data.profiles then
+				data.profiles[name] = nil
+			end
+		end
+	end
+
 	-- switch all characters that use this profile back to the default
 	if self.sv.profileKeys then
 		for key, profile in pairs(self.sv.profileKeys) do
@@ -574,6 +601,20 @@ function DBObjectLib:CopyProfile(name, silent)
 		end
 	end
 
+	-- copy unloaded namespaces
+	if self.sv.namespaces then
+		for nsname, data in pairs(self.sv.namespaces) do
+			if self.children and self.children[nsname] then
+				-- already a mapped namespace
+			elseif data.profiles then
+				-- reset the current profile
+				data.profiles[self.keys.profile] = {}
+				-- copy data
+				copyTable(data.profiles[name], data.profiles[self.keys.profile])
+			end
+		end
+	end
+
 	-- Callback: OnProfileCopied, database, sourceProfileKey
 	self.callbacks:Fire("OnProfileCopied", self, name)
 end
@@ -600,6 +641,18 @@ function DBObjectLib:ResetProfile(noChildren, noCallbacks)
 		end
 	end
 
+	-- reset unloaded namespaces
+	if self.sv.namespaces and not noChildren then
+		for nsname, data in pairs(self.sv.namespaces) do
+			if self.children and self.children[nsname] then
+				-- already a mapped namespace
+			elseif data.profiles then
+				-- reset the current profile
+				data.profiles[self.keys.profile] = nil
+			end
+		end
+	end
+
 	-- Callback: OnProfileReset, database
 	if not noCallbacks then
 		self.callbacks:Fire("OnProfileReset", self)
@@ -610,8 +663,8 @@ end
 -- profile.
 -- @param defaultProfile The profile name to use as the default
 function DBObjectLib:ResetDB(defaultProfile)
-	if defaultProfile and type(defaultProfile) ~= "string" then
-		error(("Usage: AceDBObject:ResetDB(defaultProfile): 'defaultProfile' - string or nil expected, got %q."):format(type(defaultProfile)), 2)
+	if defaultProfile and type(defaultProfile) ~= "string" and defaultProfile ~= true then
+		error(("Usage: AceDBObject:ResetDB(defaultProfile): 'defaultProfile' - string or true expected, got %q."):format(type(defaultProfile)), 2)
 	end
 
 	local sv = self.sv

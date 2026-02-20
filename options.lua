@@ -120,7 +120,7 @@ function ArenaStats:RegisterOptionsTable()
             Profiles = AceDBOptions:GetOptionsTable(ArenaStats.db)
         }
     }, { "arenastats", "as" })
-    AceConfigDialog:AddToBlizOptions(addonName, nil, nil, "General")
+    self.optionsFrame, self.optionsCategoryID = AceConfigDialog:AddToBlizOptions(addonName, nil, nil, "General")
 
     AceConfigDialog:AddToBlizOptions(addonName, "Profiles", addonName,
         "Profiles")

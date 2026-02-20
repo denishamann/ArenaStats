@@ -46,11 +46,11 @@ function ArenaStats:OnInitialize()
     self.specTable = {}
     self.arenaEnded = false
     self.current = { status = "none", stats = {}, units = {} }
-    
+
     -- Cache for BuildTable to avoid rebuilding on every GUI refresh
     self.tableCache = nil
     self.tableCacheSize = 0
-    
+
     self:Reset()
 end
 
@@ -209,7 +209,7 @@ function ArenaStats:SetLastArenaRankingData()
     for i = 1, numScores do
         local data = { GetBattlefieldScore(i) }
         local teamIndex = data[6]
-        
+
         -- Check if this player is us to determine our team color
         if data[1] == myName then
             playerTeam = (teamIndex == 0) and 'GREEN' or 'GOLD'
@@ -274,7 +274,7 @@ function ArenaStats:SetLastArenaRankingData()
     -- GetBattlefieldScore returns:
     -- [1]=playerName, [2]=killingBlows, [3]=honorKills, [4]=deaths, [5]=honorGained,
     -- [6]=faction, [7]=rank, [8]=race, [9]=class, [10]=classToken, [11]=damageDone, [12]=healingDone
-    
+
     -- Collect player's team data (0-based indexing for storage)
     for i = 1, #playerTeamTable do
         local row = playerTeamTable[i]
@@ -363,8 +363,12 @@ function ArenaStats:DrawMinimapIcon()
                 icon = "interface/icons/achievement_arena_2v2_7",
                 OnClick = function(self, button)
                     if button == "RightButton" then
-                        _G.InterfaceOptionsFrame_OpenToCategory(addonName)
-                        _G.InterfaceOptionsFrame_OpenToCategory(addonName)
+                        if _G.InterfaceOptionsFrame_OpenToCategory then
+                            _G.InterfaceOptionsFrame_OpenToCategory(addonName)
+                            _G.InterfaceOptionsFrame_OpenToCategory(addonName)
+                        elseif Settings and Settings.OpenToCategory then
+                            Settings.OpenToCategory(ArenaStats.optionsCategoryID or addonName)
+                        end
                     else
                         ArenaStats:Toggle()
                     end
@@ -410,12 +414,12 @@ end
 --- @return table[] Array of arena match records, sorted from newest to oldest
 function ArenaStats:BuildTable()
     local tableLength = #self.db.char.history
-    
+
     -- Return cached table if history size hasn't changed
     if self.tableCache and self.tableCacheSize == tableLength then
         return self.tableCache
     end
-    
+
     local tbl = {}
 
     for i = 1, tableLength do
@@ -522,11 +526,11 @@ function ArenaStats:BuildTable()
 
         })
     end
-    
+
     -- Store in cache for subsequent calls
     self.tableCache = tbl
     self.tableCacheSize = tableLength
-    
+
     return tbl
 end
 

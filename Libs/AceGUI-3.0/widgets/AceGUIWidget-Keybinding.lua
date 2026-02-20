@@ -2,7 +2,7 @@
 Keybinding Widget
 Set Keybindings in the Config UI.
 -------------------------------------------------------------------------------]]
-local Type, Version = "Keybinding", 26
+local Type, Version = "Keybinding", 27
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
@@ -12,10 +12,6 @@ local pairs = pairs
 -- WoW APIs
 local IsShiftKeyDown, IsControlKeyDown, IsAltKeyDown = IsShiftKeyDown, IsControlKeyDown, IsAltKeyDown
 local CreateFrame, UIParent = CreateFrame, UIParent
-
--- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
--- List them here for Mikk's FindGlobals script
--- GLOBALS: NOT_BOUND
 
 --[[-----------------------------------------------------------------------------
 Scripts
@@ -35,12 +31,14 @@ local function Keybinding_OnClick(frame, button)
 		if self.waitingForKey then
 			frame:EnableKeyboard(false)
 			frame:EnableMouseWheel(false)
+			frame:EnableGamePadButton(false)
 			self.msgframe:Hide()
 			frame:UnlockHighlight()
 			self.waitingForKey = nil
 		else
 			frame:EnableKeyboard(true)
 			frame:EnableMouseWheel(true)
+			frame:EnableGamePadButton(true)
 			self.msgframe:Show()
 			frame:LockHighlight()
 			self.waitingForKey = true
@@ -76,6 +74,7 @@ local function Keybinding_OnKeyDown(frame, key)
 
 		frame:EnableKeyboard(false)
 		frame:EnableMouseWheel(false)
+		frame:EnableGamePadButton(false)
 		self.msgframe:Hide()
 		frame:UnlockHighlight()
 		self.waitingForKey = nil
@@ -123,6 +122,7 @@ local methods = {
 		self:SetDisabled(false)
 		self.button:EnableKeyboard(false)
 		self.button:EnableMouseWheel(false)
+		self.button:EnableGamePadButton(false)
 	end,
 
 	-- ["OnRelease"] = nil,
@@ -199,10 +199,12 @@ local function Constructor()
 	button:SetScript("OnKeyDown", Keybinding_OnKeyDown)
 	button:SetScript("OnMouseDown", Keybinding_OnMouseDown)
 	button:SetScript("OnMouseWheel", Keybinding_OnMouseWheel)
+	button:SetScript("OnGamePadButtonDown", Keybinding_OnKeyDown)
 	button:SetPoint("BOTTOMLEFT")
 	button:SetPoint("BOTTOMRIGHT")
 	button:SetHeight(24)
 	button:EnableKeyboard(false)
+	button:EnableGamePadButton(false)
 
 	local text = button:GetFontString()
 	text:SetPoint("LEFT", 7, 0)
@@ -214,7 +216,7 @@ local function Constructor()
 	label:SetJustifyH("CENTER")
 	label:SetHeight(18)
 
-	local msgframe = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+	local msgframe = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
 	msgframe:SetHeight(30)
 	msgframe:SetBackdrop(ControlBackdrop)
 	msgframe:SetBackdropColor(0,0,0)
