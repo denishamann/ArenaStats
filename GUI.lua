@@ -259,11 +259,16 @@ function ArenaStats:SortClassSpecTable(a, b)
     -- Sort nils to the end of the list
     -- Healer specs pushed to the end (before nils)
     -- If no spec then sort by class as before
-    if not a or not b then
-        return not b
+    local aEmpty = not a or not a.class
+    local bEmpty = not b or not b.class
+    if aEmpty and bEmpty then
+        return false
     end
-    if not a.class or not b.class then
-        return not b.class
+    if aEmpty then
+        return false
+    end
+    if bEmpty then
+        return true
     end
     if not a.spec or not b.spec then
         return a.class < b.class
@@ -285,6 +290,8 @@ end
 -- Helper to populate reusable class/spec table
 local function populateClassSpecTable(tbl, row, prefix)
     for i = 1, 5 do
+        -- Explicitly clear to avoid stale data from previous rows
+        tbl[i] = tbl[i] or {}
         tbl[i].class = row[prefix .. "Class" .. i]
         tbl[i].spec = row[prefix .. "Spec" .. i]
     end
